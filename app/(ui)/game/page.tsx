@@ -106,7 +106,11 @@ function GamePageInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ slotIndex: Number(slotNum), equipmentSlot, inventoryItemId: itemId }),
+        body: JSON.stringify({
+          slotIndex: Number(slotNum),
+          equipmentSlot,
+          inventoryItemId: itemId,
+        }),
       });
       const data = (await res.json()) as InventoryWithStatus | { error?: { message?: string } };
       if (res.ok && "status" in data) {
@@ -286,7 +290,9 @@ function GamePageInner() {
   const showRecoveryBanner = lastSummaryOutcome === "DEFEAT" && run.hp <= 0;
   const hasPotion = inventory.some((i) => i.catalog.itemType === "POTION");
   const showRunOverPanel = showRecoveryBanner && !hasPotion;
-  const debugOn = typeof process.env.NEXT_PUBLIC_DEBUG !== "undefined" && process.env.NEXT_PUBLIC_DEBUG === "true";
+  const debugOn =
+    typeof process.env.NEXT_PUBLIC_DEBUG !== "undefined" &&
+    process.env.NEXT_PUBLIC_DEBUG === "true";
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -300,9 +306,7 @@ function GamePageInner() {
           No active encounter.
         </p>
       )}
-      {encounterStartError && (
-        <p className="mb-4 text-sm text-amber-400">{encounterStartError}</p>
-      )}
+      {encounterStartError && <p className="mb-4 text-sm text-amber-400">{encounterStartError}</p>}
       {encounterActive && (
         <div className="mb-4 flex items-center gap-3">
           <span className="text-sm text-amber-400">An encounter is in progress.</span>
@@ -396,7 +400,8 @@ function GamePageInner() {
               const isEquippedWeapon = run.equipped.weapon === item.id;
               const isEquippedArmor = run.equipped.armor === item.id;
               const isEquipped = isEquippedWeapon || isEquippedArmor;
-              const isWeaponOrArmor = item.catalog.itemType === "WEAPON" || item.catalog.itemType === "ARMOR";
+              const isWeaponOrArmor =
+                item.catalog.itemType === "WEAPON" || item.catalog.itemType === "ARMOR";
               const isPotion = item.catalog.itemType === "POTION";
               const pending = actionPending !== null;
               const selected = selectedItemId === item.id;
@@ -428,9 +433,7 @@ function GamePageInner() {
                         {item.catalog.defenseBonus > 0 && (
                           <span>+{item.catalog.defenseBonus} Defense</span>
                         )}
-                        {isPotion && (
-                          <span>Heal {item.catalog.healPercent}%</span>
-                        )}
+                        {isPotion && <span>Heal {item.catalog.healPercent}%</span>}
                         <span>×{item.quantity}</span>
                         <span>Sell: {item.catalog.sellValueCoins * item.quantity} coins</span>
                       </div>
@@ -448,7 +451,10 @@ function GamePageInner() {
                               type="button"
                               disabled={pending}
                               onClick={() =>
-                                handleEquip(item.id, item.catalog.itemType === "WEAPON" ? "weapon" : "armor")
+                                handleEquip(
+                                  item.id,
+                                  item.catalog.itemType === "WEAPON" ? "weapon" : "armor"
+                                )
                               }
                               className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
                             >
@@ -458,9 +464,7 @@ function GamePageInner() {
                             <button
                               type="button"
                               disabled={pending}
-                              onClick={() =>
-                                handleUnequip(isEquippedWeapon ? "weapon" : "armor")
-                              }
+                              onClick={() => handleUnequip(isEquippedWeapon ? "weapon" : "armor")}
                               className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
                             >
                               Unequip

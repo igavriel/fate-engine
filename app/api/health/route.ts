@@ -1,7 +1,8 @@
 import { json } from "@/server/http/respond";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
 
-async function getHealth(_request: Request) {
+async function getHealth(request: Request) {
+  void request;
   return json({
     status: "ok",
     ts: new Date().toISOString(),

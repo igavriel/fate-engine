@@ -28,7 +28,8 @@ async function postStartEncounterHandler(request: Request) {
     log.info({ event: "encounter_start", encounterId: result.encounterId }, "encounter_start");
     return ok(result, 200, traceId);
   } catch (err) {
-    if (err instanceof CombatError) return errorResponse(err.code, err.message, err.status, traceId);
+    if (err instanceof CombatError)
+      return errorResponse(err.code, err.message, err.status, traceId);
     if (err instanceof GameError) return errorResponse(err.code, err.message, err.status, traceId);
     throw err;
   }

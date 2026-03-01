@@ -18,7 +18,11 @@ async function getSummaryHandler(request: Request) {
     slotIndex: url.searchParams.get("slotIndex") ?? "",
   });
   if (!parsed.success) {
-    return badRequest(parsed.error.issues[0]?.message ?? "Invalid slotIndex", undefined, getTraceId(request));
+    return badRequest(
+      parsed.error.issues[0]?.message ?? "Invalid slotIndex",
+      undefined,
+      getTraceId(request)
+    );
   }
 
   const slotIndex = parsed.data.slotIndex as 1 | 2 | 3;
@@ -30,7 +34,8 @@ async function getSummaryHandler(request: Request) {
     log.info({ event: "get_summary", outcome: result.outcome }, "get_summary");
     return ok(result, 200, traceId);
   } catch (err) {
-    if (err instanceof CombatError) return errorResponse(err.code, err.message, err.status, traceId);
+    if (err instanceof CombatError)
+      return errorResponse(err.code, err.message, err.status, traceId);
     if (err instanceof GameError) return errorResponse(err.code, err.message, err.status, traceId);
     throw err;
   }

@@ -6,7 +6,14 @@ import { sellItemBodySchema } from "@/shared/zod/game";
 import { getTraceId } from "@/server/http/trace";
 import { parseJson } from "@/server/http/validate";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
-import { badRequest, errorResponse, notFound, ok, serverError, unauthorized } from "@/server/http/respond";
+import {
+  badRequest,
+  errorResponse,
+  notFound,
+  ok,
+  serverError,
+  unauthorized,
+} from "@/server/http/respond";
 import { createRequestLogger } from "@/server/log/logger";
 
 export const runtime = "nodejs";
@@ -36,7 +43,8 @@ async function postSellHandler(request: Request) {
     if (err instanceof GameError) return errorResponse(err.code, err.message, err.status, traceId);
     const msg = err instanceof Error ? err.message : "Unknown error";
     if (msg === "ITEM_NOT_FOUND") return notFound("Item not found", traceId);
-    if (msg === "CANNOT_SELL_EQUIPPED") return badRequest("Cannot sell equipped item", undefined, traceId);
+    if (msg === "CANNOT_SELL_EQUIPPED")
+      return badRequest("Cannot sell equipped item", undefined, traceId);
     return serverError("Failed to sell item", traceId);
   }
 }

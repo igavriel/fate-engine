@@ -1,12 +1,19 @@
 import { requireAuth } from "@/server/auth/requireAuth";
 import { getGameStatus } from "@/server/game/status";
-import { getInventory, usePotionItem } from "@/server/game/inventoryService";
+import { getInventory, consumePotionItem } from "@/server/game/inventoryService";
 import { GameError } from "@/server/game/requireRunForSlot";
 import { useItemBodySchema } from "@/shared/zod/game";
 import { getTraceId } from "@/server/http/trace";
 import { parseJson } from "@/server/http/validate";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
-import { badRequest, errorResponse, notFound, ok, serverError, unauthorized } from "@/server/http/respond";
+import {
+  badRequest,
+  errorResponse,
+  notFound,
+  ok,
+  serverError,
+  unauthorized,
+} from "@/server/http/respond";
 import { createRequestLogger } from "@/server/log/logger";
 
 export const runtime = "nodejs";
@@ -25,7 +32,7 @@ async function postUseHandler(request: Request) {
   const log = createRequestLogger(traceId).child({ userId, slotIndex });
 
   try {
-    await usePotionItem(userId, slotIndex as 1 | 2 | 3, inventoryItemId);
+    await consumePotionItem(userId, slotIndex as 1 | 2 | 3, inventoryItemId);
     const [status, inventory] = await Promise.all([
       getGameStatus(userId, slotIndex as 1 | 2 | 3),
       getInventory(userId, slotIndex as 1 | 2 | 3),

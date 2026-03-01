@@ -6,7 +6,14 @@ import { equipBodySchema } from "@/shared/zod/game";
 import { getTraceId } from "@/server/http/trace";
 import { parseJson } from "@/server/http/validate";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
-import { badRequest, errorResponse, notFound, ok, serverError, unauthorized } from "@/server/http/respond";
+import {
+  badRequest,
+  errorResponse,
+  notFound,
+  ok,
+  serverError,
+  unauthorized,
+} from "@/server/http/respond";
 import { createRequestLogger } from "@/server/log/logger";
 
 export const runtime = "nodejs";

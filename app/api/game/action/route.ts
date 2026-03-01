@@ -28,7 +28,8 @@ async function postActionHandler(request: Request) {
     log.info({ event: "action", type, outcome: result.outcome }, "action");
     return ok(result, 200, traceId);
   } catch (err) {
-    if (err instanceof CombatError) return errorResponse(err.code, err.message, err.status, traceId);
+    if (err instanceof CombatError)
+      return errorResponse(err.code, err.message, err.status, traceId);
     if (err instanceof GameError) return errorResponse(err.code, err.message, err.status, traceId);
     throw err;
   }
