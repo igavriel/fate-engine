@@ -18,6 +18,9 @@ export default function UiLayout({
           <Link href="/" className="font-semibold text-zinc-100 hover:text-white">
             Fate Engine
           </Link>
+          <Link href="/slots" className="text-zinc-400 hover:text-zinc-200">
+            Slots
+          </Link>
           <Link href="/login" className="text-zinc-400 hover:text-zinc-200">
             Login
           </Link>

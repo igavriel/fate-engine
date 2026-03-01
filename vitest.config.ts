@@ -10,12 +10,14 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/**/*.ts", "app/api/**/*.ts"],
-      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**"],
+      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/node_modules/**", "**/generated/**"],
     },
   },
   resolve: {
     alias: [
       { find: "@/server", replacement: path.resolve(__dirname, "./src/server") },
+      { find: "@/shared", replacement: path.resolve(__dirname, "./src/shared") },
+      { find: "@/domain", replacement: path.resolve(__dirname, "./src/domain") },
       { find: "@", replacement: path.resolve(__dirname, ".") },
     ],
   },

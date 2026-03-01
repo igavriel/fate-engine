@@ -16,7 +16,9 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"],
-      "@/server/*": ["./src/server/*"]
+      "@/server/*": ["./src/server/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/domain/*": ["./src/domain/*"]
     }
   },
   "include": [
