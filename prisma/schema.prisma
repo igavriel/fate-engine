@@ -87,6 +87,10 @@ model CharacterStats {
   id               String   @id @default(uuid())
   characterId      String   @unique
   totalKills       Int      @default(0)
+  totalFights      Int      @default(0)
+  wins             Int      @default(0)
+  losses           Int      @default(0)
+  retreats         Int      @default(0)
   totalCoinsEarned Int      @default(0)
   enemiesBySpecies Json     @default("{}")
   lastFightSummary Json?

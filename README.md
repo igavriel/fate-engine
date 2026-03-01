@@ -94,3 +94,8 @@ TypeScript builds, lint passes, and tests pass. For the integration test to asse
 - **DB:** SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment (see `prisma/schema.prisma`).
 - **Domain:** Deterministic RNG (Mulberry32), enemy generation (seed + fightCounter, tiers WEAK/NORMAL/TOUGH).
 - **UI:** `/slots`, `/create?slotIndex=#`, `/game?slotIndex=#` with status bar and 3 enemy cards. No combat or inventory actions yet (Phase 1B/1C).
+
+## Phase 1C1 (Backend combat)
+
+- **API:** POST encounter/start, GET combat, POST action (ATTACK/HEAL/RETREAT), GET summary, POST summary/ack. Combat state in `Run.stateJson`; deterministic outcomes from seed + turnCounter/fightCounter.
+- **Domain:** `src/domain/combat/`, `src/domain/progression/`, `src/domain/loot/`. Unit tests for these modules; integration test `tests/integration/combat-flow.test.ts` covers full flow when `DATABASE_URL` is set. Target: new domain code has ≥90% line coverage (run `pnpm test` and check coverage report for `src/domain/combat`, `src/domain/progression`, `src/domain/loot`).
