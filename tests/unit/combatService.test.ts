@@ -115,6 +115,7 @@ const baseRun = {
   hp: 20,
   coins: 50,
   lastOutcome: "NONE",
+  status: "ACTIVE" as const,
   stateJson: null as unknown,
   createdAt: new Date(),
   updatedAt: new Date(),

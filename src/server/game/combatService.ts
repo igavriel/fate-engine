@@ -445,6 +445,7 @@ export async function applyAction(
         leveledUp: false,
       };
     } else {
+      // Defeat: run is over (no recovery when we persist DEFEAT)
       await prisma.run.update({
         where: { id: run.id },
         data: {
@@ -452,6 +453,7 @@ export async function applyAction(
           coins: run.coins,
           turnCounter: resolveResult.nextTurnCounter,
           lastOutcome: "DEFEAT",
+          status: "OVER",
           stateJson: { version: 1, log: newLog, summary: null } as object,
         },
       });

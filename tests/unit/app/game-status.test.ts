@@ -85,6 +85,8 @@ describe("GET /api/game/status", () => {
         effectiveStats: { attack: 5, defense: 5, luck: 5, hpMax: 20 },
         equipped: { weapon: null, armor: null },
         lastOutcome: "NONE",
+        status: "ACTIVE",
+        isRecoverable: true,
       },
     });
     const res = await GET(

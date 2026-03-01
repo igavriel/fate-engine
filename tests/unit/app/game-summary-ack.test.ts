@@ -55,7 +55,18 @@ describe("POST /api/game/summary/ack", () => {
       data: { slotIndex: 1 },
     });
     mockAckSummary.mockResolvedValue({
-      status: { slotIndex: 1, run: { id: "run-1", level: 1, hp: 20, hpMax: 20, coins: 0 } },
+      status: {
+        slotIndex: 1,
+        run: {
+          id: "run-1",
+          level: 1,
+          hp: 20,
+          hpMax: 20,
+          coins: 0,
+          status: "ACTIVE",
+          isRecoverable: true,
+        },
+      },
       inventory: [],
     });
     const res = await POST(

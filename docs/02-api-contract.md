@@ -65,7 +65,9 @@ Creates character and run, assigns to the given slot.
   - `id`, `seed`, `level`, `xp`, `hp`, `hpMax`, `coins`
   - `baseStats`, `effectiveStats` (Phase 1A: effectiveStats = baseStats)
   - `equipped`: `{ weapon: null, armor: null }` in Phase 1A
-  - `lastOutcome`: `"NONE"` in Phase 1A
+  - `lastOutcome`: string (e.g. `"NONE"`, `"WIN"`, `"DEFEAT"`)
+  - `status`: `"ACTIVE"` | `"OVER"` — run is in progress or ended
+  - `isRecoverable`: boolean — true if `hp > 0` or player has at least one potion (hub can use this to show recovery vs defeat)
 
 Returns 404 if slot missing or empty.
 
@@ -181,6 +183,22 @@ Returns 404 if slot missing or empty.
 - `inventory`: same as GET /api/game/inventory
 
 Clears the pending combat summary so the player can start a new encounter.
+
+---
+
+### POST /api/game/run/end
+
+**Auth:** required.
+
+**Request body:**
+
+- `slotIndex`: 1 | 2 | 3
+
+**Response:**
+
+- `status`: same as GET /api/game/status (run will have `status: "OVER"`)
+
+Marks the current run as over (`run.status = "OVER"`). SaveSlot.runId is kept so the hub can still fetch status and show "run over". Losses are only incremented on combat DEFEAT, not when ending via this endpoint. Idempotent: calling multiple times just returns the same status.
 
 ---
 

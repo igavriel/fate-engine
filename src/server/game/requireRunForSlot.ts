@@ -49,6 +49,7 @@ export type RequireRunForSlotRun = {
   hp: number;
   coins: number;
   lastOutcome: string;
+  status: "ACTIVE" | "OVER";
   stateJson: unknown;
   createdAt: Date;
   updatedAt: Date;

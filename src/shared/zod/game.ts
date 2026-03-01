@@ -65,6 +65,9 @@ export const baseStatsSchema = z.object({
   hpMax: z.number().int().min(1),
 });
 
+export const runStatusEnumSchema = z.enum(["ACTIVE", "OVER"]);
+export type RunStatusEnum = z.infer<typeof runStatusEnumSchema>;
+
 export const runStatusSchema = z.object({
   id: z.string().uuid(),
   seed: z.number().int(),
@@ -80,6 +83,8 @@ export const runStatusSchema = z.object({
     armor: z.string().uuid().nullable(),
   }),
   lastOutcome: z.string(),
+  status: runStatusEnumSchema,
+  isRecoverable: z.boolean(),
 });
 
 export const gameStatusResponseSchema = z.object({
@@ -184,6 +189,16 @@ export const deleteSlotBodySchema = z.object({
   slotIndex: slotIndexSchema,
 });
 export type DeleteSlotBody = z.infer<typeof deleteSlotBodySchema>;
+
+// --- POST /api/game/run/end (request / response)
+export const runEndBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+});
+export const runEndResponseSchema = z.object({
+  status: gameStatusResponseSchema,
+});
+export type RunEndBody = z.infer<typeof runEndBodySchema>;
+export type RunEndResponse = z.infer<typeof runEndResponseSchema>;
 
 // --- Phase 1C: Combat
 

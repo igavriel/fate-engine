@@ -109,6 +109,7 @@ describe("requireRunForSlot", () => {
       hp: 20,
       coins: 0,
       lastOutcome: "NONE",
+      status: "ACTIVE" as const,
       stateJson: null,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -3,6 +3,7 @@ import { getGameStatus } from "@/server/game/status";
 
 const mockRequireRunForSlot = vi.fn();
 const mockRunEquipmentFindUnique = vi.fn();
+const mockRunInventoryItemFindMany = vi.fn();
 
 vi.mock("@/server/game/requireRunForSlot", () => ({
   requireRunForSlot: (...args: unknown[]) => mockRequireRunForSlot(...args),
@@ -13,6 +14,9 @@ vi.mock("@/server/db/prisma", () => ({
     runEquipment: {
       findUnique: (...args: unknown[]) => mockRunEquipmentFindUnique(...args),
     },
+    runInventoryItem: {
+      findMany: (...args: unknown[]) => mockRunInventoryItemFindMany(...args),
+    },
   },
 }));
 
@@ -20,6 +24,8 @@ describe("getGameStatus", () => {
   beforeEach(() => {
     mockRequireRunForSlot.mockReset();
     mockRunEquipmentFindUnique.mockReset();
+    mockRunInventoryItemFindMany.mockReset();
+    mockRunInventoryItemFindMany.mockResolvedValue([]);
     mockRunEquipmentFindUnique.mockResolvedValue({
       runId: "run-1",
       weaponInventoryItemId: null,
@@ -52,6 +58,7 @@ describe("getGameStatus", () => {
       hp: 18,
       coins: 5,
       lastOutcome: "NONE",
+      status: "ACTIVE" as const,
       stateJson: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -78,5 +85,7 @@ describe("getGameStatus", () => {
     expect(result.run.effectiveStats).toEqual(result.run.baseStats);
     expect(result.run.equipped).toEqual({ weapon: null, armor: null });
     expect(result.run.lastOutcome).toBe("NONE");
+    expect(result.run.status).toBe("ACTIVE");
+    expect(result.run.isRecoverable).toBe(true); // hp 18 > 0
   });
 });
