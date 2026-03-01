@@ -1,6 +1,6 @@
 import { getTraceId, runWithTraceId } from "@/server/http/trace";
 import { createRequestLogger } from "@/server/log/logger";
-import { serverError } from "@/server/http/respond";
+import { fail } from "@/server/http/respond";
 
 type RouteHandler = (
   request: Request,
@@ -38,7 +38,7 @@ export function withRequestLogging(handler: RouteHandler): RouteHandler {
           { route, method, durationMs, err, stack: err instanceof Error ? err.stack : undefined },
           "request_error"
         );
-        return serverError("Internal server error");
+        return addTraceIdToResponse(fail("INTERNAL_ERROR", "Unexpected error", 500), traceId);
       }
     });
   };

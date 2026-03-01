@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/** Standard API error shape (for validation of responses) */
+export const zApiError = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.unknown().optional(),
+  }),
+});
+
 /** Standard API error shape */
 export const errorDetailSchema = z.object({
   code: z.string(),
