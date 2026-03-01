@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 /**
  * Prisma client for tests. Uses DATABASE_URL_TEST when set (e.g. isolated test DB or SQLite),
@@ -10,10 +11,13 @@ const globalForPrismaTest = globalThis as unknown as {
   prismaTest: PrismaClient | undefined;
 };
 
+const testAdapter = new PrismaPg({
+  connectionString: testDbUrl!,
+});
 export const prismaTest =
   globalForPrismaTest.prismaTest ??
   new PrismaClient({
-    datasources: { db: { url: testDbUrl } },
+    adapter: testAdapter,
     log: undefined,
   });
 
