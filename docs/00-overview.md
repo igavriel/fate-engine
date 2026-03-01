@@ -1,6 +1,6 @@
 # Fate Engine — Overview
 
-Web RPG backend and frontend (Phase 0).
+Web RPG backend and frontend.
 
 ## Stack
 
@@ -11,12 +11,21 @@ Web RPG backend and frontend (Phase 0).
 - **Tests:** Vitest (unit/integration), Playwright (e2e)
 - **Package manager:** pnpm
 
-## Phase 0 scope
+## Phase 0 (done)
 
 - Next.js + Tailwind + TypeScript scaffold
-- Prisma + one migration (AppConfig, User)
+- Prisma + migrations (AppConfig, User)
 - Health, db-check, auth skeleton endpoints
 - Minimal UI: home, login/register
 - Local and Vercel DB connectivity verification
 
-Phase 1 will add full game logic and API DTOs.
+## Phase 1A (current)
+
+- Login → Slot Selection → Character Creation → Game Hub (read-only)
+- 3 save slots per user; create character in a slot; deterministic enemy cards (Weak/Normal/Tough) from run seed
+- No combat, no inventory operations yet
+- Zod DTOs, domain RNG + enemy generation, Prisma models (SaveSlot, Character, Run, etc.)
+
+## Phase 1B / 1C (future)
+
+- Combat, encounter start, inventory, Post-Combat Summary, Recovery

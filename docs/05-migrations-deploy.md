@@ -23,3 +23,7 @@ Copy the `DATABASE_URL` from Vercel (or Neon dashboard) into your local `.env`. 
 - `pnpm dev` — run app against that DB
 
 See README for full verification steps.
+
+## Phase 1A models
+
+Migrations include: SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment. See `prisma/schema.prisma`.

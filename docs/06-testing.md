@@ -7,10 +7,10 @@
 
 Tests live under `tests/`:
 
-- `tests/unit/` — env, logger, etc.
-- `tests/integration/` — API route handlers (e.g. db-check); require valid `DATABASE_URL` (e.g. from `.env` or `.env.test`).
+- `tests/unit/` — env, logger, RNG determinism, enemy generation determinism.
+- `tests/integration/` — API route handlers (db-check, game/slots, character/create, status, enemies). Tests call route handlers with mocked Request; integration tests that need DB use the main Postgres client and require a real `DATABASE_URL`.
 
-Env for tests: use `.env.test` or set vars in CI. `tests/setup.ts` sets defaults for missing `DATABASE_URL` and `JWT_SECRET` so unit tests can run without a real DB; integration tests need a real Postgres.
+Env for tests: use `.env.test` or set vars in CI. `tests/setup.ts` sets defaults for missing `DATABASE_URL` and `JWT_SECRET` so unit tests can run without a real DB; integration tests that create data require a real Postgres URL.
 
 ## E2E (Playwright)
 
@@ -19,4 +19,4 @@ Env for tests: use `.env.test` or set vars in CI. `tests/setup.ts` sets defaults
 
 Playwright starts the dev server (`pnpm dev`) unless `reuseExistingServer` is used. E2E specs are in `e2e/` (e.g. `smoke.spec.ts`).
 
-Phase 0: one smoke test that the login page renders.
+Phase 0: one smoke test that the login page renders. Phase 1A: login → slots → create character → hub (optional e2e).

@@ -21,16 +21,17 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = (await res.json()) as { error?: string; user?: unknown };
+      const data = (await res.json()) as { error?: string | { code?: string; message?: string }; user?: unknown };
       if (!res.ok) {
-        setMessage({ type: "err", text: data.error ?? "Request failed" });
+        const msg = typeof data.error === "object" ? data.error?.message : data.error;
+        setMessage({ type: "err", text: msg ?? "Request failed" });
         return;
       }
       if (isRegister) {
         setMessage({ type: "ok", text: "Registered. You can log in now." });
       } else {
         setMessage({ type: "ok", text: "Logged in." });
-        window.location.href = "/";
+        window.location.href = "/slots";
       }
     } catch {
       setMessage({ type: "err", text: "Network error" });

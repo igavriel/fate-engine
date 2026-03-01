@@ -1,6 +1,6 @@
 # Fate Engine
 
-Web RPG — Phase 0: Next.js App Router + Tailwind + TypeScript + Prisma (Postgres) + pnpm.
+Web RPG — Next.js App Router + Tailwind + TypeScript + Prisma (Postgres) + pnpm. Phase 1A: slots, character creation, Game Hub (read-only).
 
 ## Setup
 
@@ -58,7 +58,7 @@ To confirm local dev uses the same Postgres as the deployed app:
    pnpm dev             # start app; hit /api/db-check to see same DB
    ```
 
-4. Open `/api/health` and `/api/db-check` in the browser; both should succeed.
+4. Open `/api/health` and `/api/db-check` in the browser; both should succeed. For Phase 1A: log in, go to Slots, create a character in a slot, then open the Game Hub and confirm status bar and 3 enemy cards (Weak/Normal/Tough) appear.
 
 ## Vercel deployment
 
@@ -78,13 +78,19 @@ To confirm local dev uses the same Postgres as the deployed app:
 
 TypeScript builds, lint passes, and tests pass. For the integration test to assert DB connected, use a real `DATABASE_URL` in `.env` or `.env.test`.
 
-## Phase 0 scope
+## Phase 0 (done)
 
 - Health and db-check API routes
 - Auth skeleton: register, login, logout, me (JWT in cookie)
 - Minimal UI: home, login/register
-- One Prisma migration (AppConfig + User)
+- Prisma: AppConfig + User
 - Pino logging, Zod env validation
 - Vitest + Playwright + one smoke e2e
 
-No full game logic yet; that is Phase 1.
+## Phase 1A (current)
+
+- **Flow:** Login → Slot Selection → Character Creation → Game Hub (read-only).
+- **API:** GET/POST game/slots, POST game/character/create, GET game/status, GET game/enemies (all require auth). Zod DTOs for request/response.
+- **DB:** SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment (see `prisma/schema.prisma`).
+- **Domain:** Deterministic RNG (Mulberry32), enemy generation (seed + fightCounter, tiers WEAK/NORMAL/TOUGH).
+- **UI:** `/slots`, `/create?slotIndex=#`, `/game?slotIndex=#` with status bar and 3 enemy cards. No combat or inventory actions yet (Phase 1B/1C).
