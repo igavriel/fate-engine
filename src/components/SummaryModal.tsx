@@ -16,11 +16,7 @@ export function SummaryModal({
   ackError = null,
 }: SummaryModalProps) {
   const outcomeLabel =
-    summary.outcome === "WIN"
-      ? "Victory!"
-      : summary.outcome === "RETREAT"
-        ? "Retreat"
-        : "Defeat";
+    summary.outcome === "WIN" ? "Victory!" : summary.outcome === "RETREAT" ? "Retreat" : "Defeat";
 
   const outcomeColor =
     summary.outcome === "WIN"

@@ -10,7 +10,7 @@ vi.mock("@/server/db/prisma", () => ({
   },
 }));
 vi.mock("@/server/auth/password", () => ({
-  verifyPassword: (password: string, _hash: string) => mockVerifyPassword(password),
+  verifyPassword: (password: string, hash: string) => mockVerifyPassword(password, hash),
 }));
 
 describe("POST /api/auth/login", () => {

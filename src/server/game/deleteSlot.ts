@@ -9,10 +9,7 @@ import { listSlots } from "@/server/game/slots";
  * - Slot not found → GameError SLOT_NOT_FOUND (404)
  * - Slot already empty → GameError SLOT_EMPTY (400)
  */
-export async function deleteSlot(
-  userId: string,
-  slotIndex: 1 | 2 | 3
-): Promise<SlotsResponse> {
+export async function deleteSlot(userId: string, slotIndex: 1 | 2 | 3): Promise<SlotsResponse> {
   const slot = await prisma.saveSlot.findUnique({
     where: { userId_slotIndex: { userId, slotIndex } },
   });

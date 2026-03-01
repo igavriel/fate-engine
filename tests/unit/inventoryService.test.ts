@@ -3,7 +3,7 @@ import {
   getInventory,
   equipItem,
   unequipItem,
-  usePotionItem,
+  consumePotionItem,
   sellItemFromInventory,
 } from "@/server/game/inventoryService";
 
@@ -143,7 +143,15 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-1",
         quantity: 1,
-        itemCatalog: { id: "cat-1", name: "Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
+        itemCatalog: {
+          id: "cat-1",
+          name: "Sword",
+          itemType: "WEAPON",
+          attackBonus: 2,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 5,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunEquipmentFindUnique.mockResolvedValue({
@@ -167,7 +175,15 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-2",
         quantity: 1,
-        itemCatalog: { id: "cat-2", name: "Vest", itemType: "ARMOR", attackBonus: 0, defenseBonus: 2, healPercent: 25, sellValueCoins: 7 },
+        itemCatalog: {
+          id: "cat-2",
+          name: "Vest",
+          itemType: "ARMOR",
+          attackBonus: 0,
+          defenseBonus: 2,
+          healPercent: 25,
+          sellValueCoins: 7,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunEquipmentFindUnique.mockResolvedValue({
@@ -187,7 +203,11 @@ describe("inventoryService", () => {
 
     it("throws ITEM_NOT_FOUND when inventory item not found", async () => {
       mockRunInventoryItemFindFirst.mockResolvedValue(null);
-      mockRunEquipmentFindUnique.mockResolvedValue({ runId, weaponInventoryItemId: null, armorInventoryItemId: null });
+      mockRunEquipmentFindUnique.mockResolvedValue({
+        runId,
+        weaponInventoryItemId: null,
+        armorInventoryItemId: null,
+      });
 
       await expect(equipItem("user-1", 1, "weapon", "bad-id")).rejects.toThrow("ITEM_NOT_FOUND");
       expect(mockRunEquipmentUpdate).not.toHaveBeenCalled();
@@ -199,11 +219,21 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-1",
         quantity: 1,
-        itemCatalog: { id: "cat-1", name: "Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
+        itemCatalog: {
+          id: "cat-1",
+          name: "Sword",
+          itemType: "WEAPON",
+          attackBonus: 2,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 5,
+        },
       });
       mockRunEquipmentFindUnique.mockResolvedValue(null);
 
-      await expect(equipItem("user-1", 1, "weapon", "inv-1")).rejects.toThrow("EQUIPMENT_NOT_FOUND");
+      await expect(equipItem("user-1", 1, "weapon", "inv-1")).rejects.toThrow(
+        "EQUIPMENT_NOT_FOUND"
+      );
       expect(mockRunEquipmentUpdate).not.toHaveBeenCalled();
     });
   });
@@ -249,20 +279,28 @@ describe("inventoryService", () => {
     });
   });
 
-  describe("usePotionItem", () => {
+  describe("consumePotionItem", () => {
     it("updates run hp and decrements quantity when remaining > 0", async () => {
       const invItem = {
         id: "inv-potion",
         runId,
         itemCatalogId: "cat-p",
         quantity: 2,
-        itemCatalog: { id: "cat-p", name: "Potion", itemType: "POTION", attackBonus: 0, defenseBonus: 0, healPercent: 25, sellValueCoins: 2 },
+        itemCatalog: {
+          id: "cat-p",
+          name: "Potion",
+          itemType: "POTION",
+          attackBonus: 0,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 2,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunUpdate.mockResolvedValue({});
       mockRunInventoryItemUpdate.mockResolvedValue({});
 
-      const result = await usePotionItem("user-1", 1, "inv-potion");
+      const result = await consumePotionItem("user-1", 1, "inv-potion");
 
       expect(result.newHp).toBe(20); // 18+5 capped at hpMax 20
       expect(mockRunUpdate).toHaveBeenCalledWith({
@@ -282,13 +320,21 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-p",
         quantity: 1,
-        itemCatalog: { id: "cat-p", name: "Potion", itemType: "POTION", attackBonus: 0, defenseBonus: 0, healPercent: 25, sellValueCoins: 2 },
+        itemCatalog: {
+          id: "cat-p",
+          name: "Potion",
+          itemType: "POTION",
+          attackBonus: 0,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 2,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunUpdate.mockResolvedValue({});
       mockRunInventoryItemDelete.mockResolvedValue({});
 
-      const result = await usePotionItem("user-1", 1, "inv-potion");
+      const result = await consumePotionItem("user-1", 1, "inv-potion");
 
       expect(result.newHp).toBe(20); // 18+5 capped at hpMax 20
       expect(mockRunInventoryItemDelete).toHaveBeenCalledWith({ where: { id: "inv-potion" } });
@@ -298,7 +344,7 @@ describe("inventoryService", () => {
     it("throws ITEM_NOT_FOUND when inventory item not found", async () => {
       mockRunInventoryItemFindFirst.mockResolvedValue(null);
 
-      await expect(usePotionItem("user-1", 1, "bad-id")).rejects.toThrow("ITEM_NOT_FOUND");
+      await expect(consumePotionItem("user-1", 1, "bad-id")).rejects.toThrow("ITEM_NOT_FOUND");
       expect(mockRunUpdate).not.toHaveBeenCalled();
     });
 
@@ -308,10 +354,18 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-1",
         quantity: 1,
-        itemCatalog: { id: "cat-1", name: "Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
+        itemCatalog: {
+          id: "cat-1",
+          name: "Sword",
+          itemType: "WEAPON",
+          attackBonus: 2,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 5,
+        },
       });
 
-      await expect(usePotionItem("user-1", 1, "inv-w")).rejects.toThrow("NOT_A_POTION");
+      await expect(consumePotionItem("user-1", 1, "inv-w")).rejects.toThrow("NOT_A_POTION");
       expect(mockRunUpdate).not.toHaveBeenCalled();
     });
   });
@@ -323,7 +377,15 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-1",
         quantity: 1,
-        itemCatalog: { id: "cat-1", name: "Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
+        itemCatalog: {
+          id: "cat-1",
+          name: "Sword",
+          itemType: "WEAPON",
+          attackBonus: 2,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 5,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunEquipmentFindUnique.mockResolvedValue({
@@ -346,7 +408,11 @@ describe("inventoryService", () => {
 
     it("throws ITEM_NOT_FOUND when inventory item not found", async () => {
       mockRunInventoryItemFindFirst.mockResolvedValue(null);
-      mockRunEquipmentFindUnique.mockResolvedValue({ runId, weaponInventoryItemId: null, armorInventoryItemId: null });
+      mockRunEquipmentFindUnique.mockResolvedValue({
+        runId,
+        weaponInventoryItemId: null,
+        armorInventoryItemId: null,
+      });
 
       await expect(sellItemFromInventory("user-1", 1, "bad-id")).rejects.toThrow("ITEM_NOT_FOUND");
       expect(mockRunUpdate).not.toHaveBeenCalled();
@@ -358,7 +424,15 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-1",
         quantity: 1,
-        itemCatalog: { id: "cat-1", name: "Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
+        itemCatalog: {
+          id: "cat-1",
+          name: "Sword",
+          itemType: "WEAPON",
+          attackBonus: 2,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 5,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunEquipmentFindUnique.mockResolvedValue({
@@ -367,7 +441,9 @@ describe("inventoryService", () => {
         armorInventoryItemId: null,
       });
 
-      await expect(sellItemFromInventory("user-1", 1, "inv-weapon")).rejects.toThrow("CANNOT_SELL_EQUIPPED");
+      await expect(sellItemFromInventory("user-1", 1, "inv-weapon")).rejects.toThrow(
+        "CANNOT_SELL_EQUIPPED"
+      );
       expect(mockRunUpdate).not.toHaveBeenCalled();
     });
 
@@ -377,7 +453,15 @@ describe("inventoryService", () => {
         runId,
         itemCatalogId: "cat-2",
         quantity: 1,
-        itemCatalog: { id: "cat-2", name: "Vest", itemType: "ARMOR", attackBonus: 0, defenseBonus: 2, healPercent: 25, sellValueCoins: 7 },
+        itemCatalog: {
+          id: "cat-2",
+          name: "Vest",
+          itemType: "ARMOR",
+          attackBonus: 0,
+          defenseBonus: 2,
+          healPercent: 25,
+          sellValueCoins: 7,
+        },
       };
       mockRunInventoryItemFindFirst.mockResolvedValue(invItem);
       mockRunEquipmentFindUnique.mockResolvedValue({
@@ -386,7 +470,9 @@ describe("inventoryService", () => {
         armorInventoryItemId: "inv-armor",
       });
 
-      await expect(sellItemFromInventory("user-1", 1, "inv-armor")).rejects.toThrow("CANNOT_SELL_EQUIPPED");
+      await expect(sellItemFromInventory("user-1", 1, "inv-armor")).rejects.toThrow(
+        "CANNOT_SELL_EQUIPPED"
+      );
       expect(mockRunUpdate).not.toHaveBeenCalled();
     });
   });

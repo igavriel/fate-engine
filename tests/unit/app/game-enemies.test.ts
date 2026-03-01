@@ -63,9 +63,30 @@ describe("GET /api/game/enemies", () => {
     mockRequireAuth.mockResolvedValue("user-1");
     mockGetEnemies.mockResolvedValue({
       enemies: [
-        { choiceId: "a", tier: "WEAK", name: "Goblin", species: "goblin", level: 1, preview: { estimatedLootCoinsMin: 0, estimatedLootCoinsMax: 5 } },
-        { choiceId: "b", tier: "NORMAL", name: "Orc", species: "orc", level: 2, preview: { estimatedLootCoinsMin: 2, estimatedLootCoinsMax: 8 } },
-        { choiceId: "c", tier: "TOUGH", name: "Troll", species: "troll", level: 3, preview: { estimatedLootCoinsMin: 5, estimatedLootCoinsMax: 15 } },
+        {
+          choiceId: "a",
+          tier: "WEAK",
+          name: "Goblin",
+          species: "goblin",
+          level: 1,
+          preview: { estimatedLootCoinsMin: 0, estimatedLootCoinsMax: 5 },
+        },
+        {
+          choiceId: "b",
+          tier: "NORMAL",
+          name: "Orc",
+          species: "orc",
+          level: 2,
+          preview: { estimatedLootCoinsMin: 2, estimatedLootCoinsMax: 8 },
+        },
+        {
+          choiceId: "c",
+          tier: "TOUGH",
+          name: "Troll",
+          species: "troll",
+          level: 3,
+          preview: { estimatedLootCoinsMin: 5, estimatedLootCoinsMax: 15 },
+        },
       ],
     });
     const res = await GET(

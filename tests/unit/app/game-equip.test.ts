@@ -15,18 +15,13 @@ vi.mock("@/server/http/validate", () => ({
   parseJson: (req: Request, schema: unknown) => mockParseJson(req, schema),
 }));
 vi.mock("@/server/game/inventoryService", () => ({
-  equipItem: (
-    userId: string,
-    slotIndex: number,
-    equipmentSlot: string,
-    inventoryItemId: string
-  ) => mockEquipItem(userId, slotIndex, equipmentSlot, inventoryItemId),
+  equipItem: (userId: string, slotIndex: number, equipmentSlot: string, inventoryItemId: string) =>
+    mockEquipItem(userId, slotIndex, equipmentSlot, inventoryItemId),
   getInventory: (userId: string, slotIndex: number) =>
     (mockGetInventory as vi.Mock)(userId, slotIndex),
 }));
 vi.mock("@/server/game/status", () => ({
-  getGameStatus: (userId: string, slotIndex: number) =>
-    mockGetGameStatus(userId, slotIndex),
+  getGameStatus: (userId: string, slotIndex: number) => mockGetGameStatus(userId, slotIndex),
 }));
 
 const sampleStatus = {
@@ -96,9 +91,7 @@ describe("POST /api/game/equip", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockEquipItem.mockRejectedValue(
-      new GameError("SLOT_EMPTY", "Slot empty", 400)
-    );
+    mockEquipItem.mockRejectedValue(new GameError("SLOT_EMPTY", "Slot empty", 400));
     const res = await POST(
       new Request("http://localhost/api/game/equip", {
         method: "POST",

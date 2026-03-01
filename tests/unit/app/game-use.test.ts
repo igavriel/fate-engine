@@ -4,7 +4,7 @@ import { GameError } from "@/server/game/requireRunForSlot";
 
 const mockRequireAuth = vi.fn();
 const mockParseJson = vi.fn();
-const mockUsePotionItem = vi.fn();
+const mockConsumePotionItem = vi.fn();
 const mockGetGameStatus = vi.fn();
 const mockGetInventory = vi.fn();
 
@@ -15,17 +15,13 @@ vi.mock("@/server/http/validate", () => ({
   parseJson: (req: Request, schema: unknown) => mockParseJson(req, schema),
 }));
 vi.mock("@/server/game/inventoryService", () => ({
-  usePotionItem: (
-    userId: string,
-    slotIndex: number,
-    inventoryItemId: string
-  ) => mockUsePotionItem(userId, slotIndex, inventoryItemId),
+  consumePotionItem: (userId: string, slotIndex: number, inventoryItemId: string) =>
+    mockConsumePotionItem(userId, slotIndex, inventoryItemId),
   getInventory: (userId: string, slotIndex: number) =>
     (mockGetInventory as vi.Mock)(userId, slotIndex),
 }));
 vi.mock("@/server/game/status", () => ({
-  getGameStatus: (userId: string, slotIndex: number) =>
-    mockGetGameStatus(userId, slotIndex),
+  getGameStatus: (userId: string, slotIndex: number) => mockGetGameStatus(userId, slotIndex),
 }));
 
 const sampleStatus = {
@@ -50,7 +46,7 @@ describe("POST /api/game/use", () => {
   beforeEach(() => {
     mockRequireAuth.mockReset();
     mockParseJson.mockReset();
-    mockUsePotionItem.mockReset();
+    mockConsumePotionItem.mockReset();
     mockGetGameStatus.mockReset();
     mockGetInventory.mockReset();
   });
@@ -83,7 +79,7 @@ describe("POST /api/game/use", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns GameError status when usePotionItem throws GameError", async () => {
+  it("returns GameError status when consumePotionItem throws GameError", async () => {
     mockRequireAuth.mockResolvedValue("user-1");
     mockParseJson.mockResolvedValue({
       success: true,
@@ -92,9 +88,7 @@ describe("POST /api/game/use", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockUsePotionItem.mockRejectedValue(
-      new GameError("SLOT_EMPTY", "Slot empty", 400)
-    );
+    mockConsumePotionItem.mockRejectedValue(new GameError("SLOT_EMPTY", "Slot empty", 400));
     const res = await POST(
       new Request("http://localhost/api/game/use", {
         method: "POST",
@@ -119,7 +113,7 @@ describe("POST /api/game/use", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockUsePotionItem.mockRejectedValue(new Error("ITEM_NOT_FOUND"));
+    mockConsumePotionItem.mockRejectedValue(new Error("ITEM_NOT_FOUND"));
     const res = await POST(
       new Request("http://localhost/api/game/use", {
         method: "POST",
@@ -144,7 +138,7 @@ describe("POST /api/game/use", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockUsePotionItem.mockRejectedValue(new Error("NOT_A_POTION"));
+    mockConsumePotionItem.mockRejectedValue(new Error("NOT_A_POTION"));
     const res = await POST(
       new Request("http://localhost/api/game/use", {
         method: "POST",
@@ -169,7 +163,7 @@ describe("POST /api/game/use", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockUsePotionItem.mockRejectedValue(new Error("DB_ERROR"));
+    mockConsumePotionItem.mockRejectedValue(new Error("DB_ERROR"));
     const res = await POST(
       new Request("http://localhost/api/game/use", {
         method: "POST",
@@ -192,7 +186,7 @@ describe("POST /api/game/use", () => {
         inventoryItemId: "00000000-0000-0000-0000-000000000001",
       },
     });
-    mockUsePotionItem.mockResolvedValue(undefined);
+    mockConsumePotionItem.mockResolvedValue(undefined);
     mockGetGameStatus.mockResolvedValue(sampleStatus);
     mockGetInventory.mockResolvedValue(sampleInventory);
     const res = await POST(
@@ -209,7 +203,7 @@ describe("POST /api/game/use", () => {
     const data = (await res.json()) as { status: typeof sampleStatus; inventory: unknown[] };
     expect(data.status).toEqual(sampleStatus);
     expect(data.inventory).toEqual(sampleInventory);
-    expect(mockUsePotionItem).toHaveBeenCalledWith(
+    expect(mockConsumePotionItem).toHaveBeenCalledWith(
       "user-1",
       1,
       "00000000-0000-0000-0000-000000000001"

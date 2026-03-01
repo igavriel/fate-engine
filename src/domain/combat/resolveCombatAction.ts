@@ -39,9 +39,7 @@ export interface ResolveCombatActionResult {
   healIntent?: HealIntent;
 }
 
-export function resolveCombatAction(
-  input: ResolveCombatActionInput
-): ResolveCombatActionResult {
+export function resolveCombatAction(input: ResolveCombatActionInput): ResolveCombatActionResult {
   const {
     seed,
     turnCounter,
@@ -99,10 +97,7 @@ export function resolveCombatAction(
 
   // ATTACK
   const luckRoll = rng.int(0, playerLuck);
-  const damage = Math.max(
-    1,
-    playerAttack - encounter.enemy.defense + luckRoll
-  );
+  const damage = Math.max(1, playerAttack - encounter.enemy.defense + luckRoll);
   const enemyHpAfter = Math.max(0, encounter.enemyHp - damage);
 
   let outcome: "CONTINUE" | "WIN" | "DEFEAT" = "CONTINUE";
@@ -111,10 +106,7 @@ export function resolveCombatAction(
   // Enemy counterattack (only if not dead)
   let hpDelta = 0;
   if (enemyHpAfter > 0) {
-    const enemyDamage = Math.max(
-      1,
-      encounter.enemy.attack - input.playerDefense + rng.int(0, 2)
-    );
+    const enemyDamage = Math.max(1, encounter.enemy.attack - input.playerDefense + rng.int(0, 2));
     const newPlayerHp = Math.max(0, playerHp - enemyDamage);
     hpDelta = newPlayerHp - playerHp;
     if (newPlayerHp <= 0) outcome = "DEFEAT";
@@ -129,9 +121,7 @@ export function resolveCombatAction(
     logEntry: {
       t: now,
       text: `You hit for ${damage} damage.${
-        enemyHpAfter > 0 && hpDelta < 0
-          ? ` Enemy counterattacked for ${-hpDelta} damage.`
-          : ""
+        enemyHpAfter > 0 && hpDelta < 0 ? ` Enemy counterattacked for ${-hpDelta} damage.` : ""
       }`,
     },
   };

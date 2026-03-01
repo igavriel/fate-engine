@@ -30,7 +30,9 @@ describe("GET /api/game/summary", () => {
   it("returns 401 when not authenticated", async () => {
     mockRequireAuth.mockResolvedValue(null);
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(401);
     expect(mockGetSummary).not.toHaveBeenCalled();
@@ -55,7 +57,9 @@ describe("GET /api/game/summary", () => {
       leveledUp: false,
     });
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(200);
     const data = (await res.json()) as { outcome: string; enemy: { name: string } };
@@ -69,7 +73,9 @@ describe("GET /api/game/summary", () => {
     const { CombatError } = await import("@/server/game/combatService");
     mockGetSummary.mockRejectedValue(new CombatError("NO_SUMMARY", "No pending summary", 404));
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(404);
     const data = (await res.json()) as { error: { code: string } };
@@ -81,7 +87,9 @@ describe("GET /api/game/summary", () => {
     const { GameError } = await import("@/server/game/requireRunForSlot");
     mockGetSummary.mockRejectedValue(new GameError("SLOT_NOT_FOUND", "Slot not found", 404));
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(404);
     const data = (await res.json()) as { error: { code: string } };
@@ -91,9 +99,13 @@ describe("GET /api/game/summary", () => {
   it("returns 400 when GameError SLOT_EMPTY", async () => {
     mockRequireAuth.mockResolvedValue("user-1");
     const { GameError } = await import("@/server/game/requireRunForSlot");
-    mockGetSummary.mockRejectedValue(new GameError("SLOT_EMPTY", "Slot has no character or run", 400));
+    mockGetSummary.mockRejectedValue(
+      new GameError("SLOT_EMPTY", "Slot has no character or run", 400)
+    );
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(400);
     const data = (await res.json()) as { error: { code: string } };
@@ -104,7 +116,9 @@ describe("GET /api/game/summary", () => {
     mockRequireAuth.mockResolvedValue("user-1");
     mockGetSummary.mockRejectedValue(new Error("Unexpected DB error"));
     const res = await GET(
-      new Request("http://localhost/api/game/summary?slotIndex=1", { headers: { Cookie: "fe_auth=x" } })
+      new Request("http://localhost/api/game/summary?slotIndex=1", {
+        headers: { Cookie: "fe_auth=x" },
+      })
     );
     expect(res.status).toBe(500);
     const data = (await res.json()) as { error: { code: string } };

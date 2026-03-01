@@ -25,7 +25,9 @@ const mockTxRunInventoryItemFindFirst = vi.fn().mockResolvedValue(null);
 const mockTxRunInventoryItemUpdate = vi.fn().mockResolvedValue(undefined);
 const mockTxRunInventoryItemCreate = vi.fn().mockResolvedValue(undefined);
 const mockTxRunInventoryItemDelete = vi.fn().mockResolvedValue(undefined);
-const mockTxCharacterStatsFindUnique = vi.fn().mockResolvedValue({ totalFights: 0, wins: 0, totalCoinsEarned: 0, enemiesBySpecies: {} });
+const mockTxCharacterStatsFindUnique = vi
+  .fn()
+  .mockResolvedValue({ totalFights: 0, wins: 0, totalCoinsEarned: 0, enemiesBySpecies: {} });
 const mockTxCharacterStatsUpdate = vi.fn().mockResolvedValue(undefined);
 const mockCharacterStatsFindUnique = vi.fn().mockResolvedValue(null);
 const mockCharacterStatsUpdate = vi.fn().mockResolvedValue(undefined);
@@ -46,33 +48,46 @@ vi.mock("@/server/db/prisma", () => ({
     },
     itemCatalog: {
       findMany: vi.fn().mockResolvedValue([{ id: "cat-1" }]),
-      findUnique: vi.fn().mockResolvedValue({ name: "Item", itemType: "POTION", attackBonus: 0, defenseBonus: 0, healPercent: 25 }),
+      findUnique: vi.fn().mockResolvedValue({
+        name: "Item",
+        itemType: "POTION",
+        attackBonus: 0,
+        defenseBonus: 0,
+        healPercent: 25,
+      }),
     },
-    $transaction: vi.fn((fn: (tx: {
-      character: { update: typeof mockTxCharacterUpdate };
-      run: { update: typeof mockTxRunUpdate };
-      runInventoryItem: {
-        findFirst: typeof mockTxRunInventoryItemFindFirst;
-        update: typeof mockTxRunInventoryItemUpdate;
-        create: typeof mockTxRunInventoryItemCreate;
-        delete: typeof mockTxRunInventoryItemDelete;
-      };
-      characterStats: { findUnique: typeof mockTxCharacterStatsFindUnique; update: typeof mockTxCharacterStatsUpdate };
-    }) => Promise<unknown>) =>
-      fn({
-        character: { update: mockTxCharacterUpdate },
-        run: { update: mockTxRunUpdate },
-        runInventoryItem: {
-          findFirst: mockTxRunInventoryItemFindFirst,
-          update: mockTxRunInventoryItemUpdate,
-          create: mockTxRunInventoryItemCreate,
-          delete: mockTxRunInventoryItemDelete,
-        },
-        characterStats: {
-          findUnique: mockTxCharacterStatsFindUnique,
-          update: mockTxCharacterStatsUpdate,
-        },
-      })),
+    $transaction: vi.fn(
+      (
+        fn: (tx: {
+          character: { update: typeof mockTxCharacterUpdate };
+          run: { update: typeof mockTxRunUpdate };
+          runInventoryItem: {
+            findFirst: typeof mockTxRunInventoryItemFindFirst;
+            update: typeof mockTxRunInventoryItemUpdate;
+            create: typeof mockTxRunInventoryItemCreate;
+            delete: typeof mockTxRunInventoryItemDelete;
+          };
+          characterStats: {
+            findUnique: typeof mockTxCharacterStatsFindUnique;
+            update: typeof mockTxCharacterStatsUpdate;
+          };
+        }) => Promise<unknown>
+      ) =>
+        fn({
+          character: { update: mockTxCharacterUpdate },
+          run: { update: mockTxRunUpdate },
+          runInventoryItem: {
+            findFirst: mockTxRunInventoryItemFindFirst,
+            update: mockTxRunInventoryItemUpdate,
+            create: mockTxRunInventoryItemCreate,
+            delete: mockTxRunInventoryItemDelete,
+          },
+          characterStats: {
+            findUnique: mockTxCharacterStatsFindUnique,
+            update: mockTxCharacterStatsUpdate,
+          },
+        })
+    ),
   },
 }));
 
@@ -87,7 +102,6 @@ const mockGenerateLoot = vi.fn();
 vi.mock("@/domain/loot/generateLoot", () => ({
   generateLoot: (...args: unknown[]) => mockGenerateLoot(...args),
 }));
-
 
 const runId = "run-1";
 const charId = "char-1";
@@ -160,7 +174,14 @@ describe("combatService", () => {
     it("throws SUMMARY_PENDING when state has summary", async () => {
       mockRequireRunForSlot.mockResolvedValue({
         character: baseRun.character,
-        run: { ...baseRun, stateJson: { version: 1, log: [], summary: { outcome: "WIN", enemy: {}, delta: {}, loot: [], leveledUp: false } } },
+        run: {
+          ...baseRun,
+          stateJson: {
+            version: 1,
+            log: [],
+            summary: { outcome: "WIN", enemy: {}, delta: {}, loot: [], leveledUp: false },
+          },
+        },
       });
       await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
@@ -264,7 +285,15 @@ describe("combatService", () => {
           runId,
           itemCatalogId: "cat-potion",
           quantity: 2,
-          itemCatalog: { id: "cat-potion", itemType: "POTION", name: "Potion", attackBonus: 0, defenseBonus: 0, healPercent: 25, sellValueCoins: 2 },
+          itemCatalog: {
+            id: "cat-potion",
+            itemType: "POTION",
+            name: "Potion",
+            attackBonus: 0,
+            defenseBonus: 0,
+            healPercent: 25,
+            sellValueCoins: 2,
+          },
         },
       ]);
       const result = await getCombat("user-1", 1);
@@ -360,7 +389,15 @@ describe("combatService", () => {
             version: 1,
             encounter: {
               encounterId: "e1",
-              enemy: { choiceId: "e", name: "G", species: "B", level: 1, tier: "WEAK" as const, attack: 1, defense: 0 },
+              enemy: {
+                choiceId: "e",
+                name: "G",
+                species: "B",
+                level: 1,
+                tier: "WEAK" as const,
+                attack: 1,
+                defense: 0,
+              },
               enemyHp: 10,
               enemyHpMax: 10,
             },
@@ -608,7 +645,15 @@ describe("combatService", () => {
         runId,
         itemCatalogId: "cat-potion",
         quantity: 1,
-        itemCatalog: { id: "cat-potion", itemType: "POTION" as const, name: "Potion", attackBonus: 0, defenseBonus: 0, healPercent: 25, sellValueCoins: 2 },
+        itemCatalog: {
+          id: "cat-potion",
+          itemType: "POTION" as const,
+          name: "Potion",
+          attackBonus: 0,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 2,
+        },
       };
       mockRunInventoryItemFindMany.mockResolvedValue([potionRow]);
       mockRequireRunForSlot.mockResolvedValue({
@@ -649,7 +694,15 @@ describe("combatService", () => {
         runId,
         itemCatalogId: "cat-potion",
         quantity: 3,
-        itemCatalog: { id: "cat-potion", itemType: "POTION" as const, name: "Potion", attackBonus: 0, defenseBonus: 0, healPercent: 25, sellValueCoins: 2 },
+        itemCatalog: {
+          id: "cat-potion",
+          itemType: "POTION" as const,
+          name: "Potion",
+          attackBonus: 0,
+          defenseBonus: 0,
+          healPercent: 25,
+          sellValueCoins: 2,
+        },
       };
       mockRunInventoryItemFindMany.mockResolvedValue([potionRow]);
       mockRequireRunForSlot.mockResolvedValue({
@@ -682,6 +735,5 @@ describe("combatService", () => {
       expect(result.outcome).toBe("CONTINUE");
       expect(mockTxRunInventoryItemUpdate).toHaveBeenCalled();
     });
-
   });
 });

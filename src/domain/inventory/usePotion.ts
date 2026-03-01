@@ -2,7 +2,7 @@
  * Apply potion use: heal = floor(hpMax * healPercent/100), hp = min(hpMax, hp + heal).
  * Returns new hp and remaining quantity (quantity - 1; caller should delete if 0).
  */
-export function usePotion(
+export function applyPotion(
   currentHp: number,
   hpMax: number,
   healPercent: number,

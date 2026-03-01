@@ -6,10 +6,7 @@ import { getInventory } from "@/server/game/inventoryService";
 import { computeEffectiveStats } from "@/domain/stats/computeEffectiveStats";
 import { generateEnemyChoices } from "@/domain/enemies/generateEnemyChoices";
 import { startEncounter as domainStartEncounter } from "@/domain/combat/startEncounter";
-import {
-  resolveCombatAction,
-  type CombatActionType,
-} from "@/domain/combat/resolveCombatAction";
+import { resolveCombatAction, type CombatActionType } from "@/domain/combat/resolveCombatAction";
 import { xpGainedForKill, addXp, applyLevelUps } from "@/domain/progression/xp";
 import { computeLevelUpGrowth } from "@/domain/progression/levelUp";
 import { generateLoot } from "@/domain/loot/generateLoot";
@@ -276,9 +273,9 @@ export async function applyAction(
       const xpGain = xpGainedForKill(enemySnapshot.level);
       const totalXp = addXp(character.xp, character.level, xpGain);
       const levelResult = applyLevelUps(totalXp, character.level);
-      const catalogIds = (
-        await prisma.itemCatalog.findMany({ select: { id: true } })
-      ).map((c) => c.id);
+      const catalogIds = (await prisma.itemCatalog.findMany({ select: { id: true } })).map(
+        (c) => c.id
+      );
       const lootResult = generateLoot({
         seed: run.seed,
         fightCounter: run.fightCounter - 1,
@@ -305,7 +302,8 @@ export async function applyAction(
         baseLuck += growth.statDelta.luck;
         baseHpMax += growth.statDelta.hpMax;
       }
-      const finalHp = levelResult.levelsGained > 0 ? baseHpMax : Math.min(character.baseHpMax, newHp);
+      const finalHp =
+        levelResult.levelsGained > 0 ? baseHpMax : Math.min(character.baseHpMax, newHp);
 
       await prisma.$transaction(async (tx) => {
         await tx.character.update({
@@ -359,7 +357,11 @@ export async function applyAction(
               enemiesBySpecies: speciesCount,
               lastFightSummary: {
                 outcome: "WIN",
-                enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+                enemy: {
+                  name: enemySnapshot.name,
+                  species: enemySnapshot.species,
+                  level: enemySnapshot.level,
+                },
                 xpGained: xpGain,
                 coinsGained: lootResult.coinsGained,
               } as object,
@@ -386,7 +388,11 @@ export async function applyAction(
 
       summaryData = {
         outcome: "WIN",
-        enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+        enemy: {
+          name: enemySnapshot.name,
+          species: enemySnapshot.species,
+          level: enemySnapshot.level,
+        },
         delta: {
           xpGained: xpGain,
           coinsGained: lootResult.coinsGained,
@@ -418,14 +424,22 @@ export async function applyAction(
             retreats: stats.retreats + 1,
             lastFightSummary: {
               outcome: "RETREAT",
-              enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+              enemy: {
+                name: enemySnapshot.name,
+                species: enemySnapshot.species,
+                level: enemySnapshot.level,
+              },
             } as object,
           },
         });
       }
       summaryData = {
         outcome: "RETREAT",
-        enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+        enemy: {
+          name: enemySnapshot.name,
+          species: enemySnapshot.species,
+          level: enemySnapshot.level,
+        },
         delta: { xpGained: 0, coinsGained: resolveResult.coinsDelta, hpChange: 0 },
         loot: [],
         leveledUp: false,
@@ -452,14 +466,22 @@ export async function applyAction(
             losses: stats.losses + 1,
             lastFightSummary: {
               outcome: "DEFEAT",
-              enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+              enemy: {
+                name: enemySnapshot.name,
+                species: enemySnapshot.species,
+                level: enemySnapshot.level,
+              },
             } as object,
           },
         });
       }
       summaryData = {
         outcome: "DEFEAT",
-        enemy: { name: enemySnapshot.name, species: enemySnapshot.species, level: enemySnapshot.level },
+        enemy: {
+          name: enemySnapshot.name,
+          species: enemySnapshot.species,
+          level: enemySnapshot.level,
+        },
         delta: { xpGained: 0, coinsGained: 0, hpChange: -run.hp },
         loot: [],
         leveledUp: false,
@@ -490,10 +512,7 @@ export async function applyAction(
   return { outcome: resolveResult.outcome };
 }
 
-export async function getSummary(
-  userId: string,
-  slotIndex: 1 | 2 | 3
-): Promise<SummaryResponse> {
+export async function getSummary(userId: string, slotIndex: 1 | 2 | 3): Promise<SummaryResponse> {
   const { run } = await requireRunForSlot(userId, slotIndex);
   const state = getRunState(run.stateJson);
 

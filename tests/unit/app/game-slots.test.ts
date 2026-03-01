@@ -29,7 +29,12 @@ describe("GET /api/game/slots", () => {
     mockListSlots.mockResolvedValue({
       slots: [
         { slotIndex: 1, isEmpty: true, character: null, updatedAt: null },
-        { slotIndex: 2, isEmpty: false, character: { id: "c2", name: "Hero", species: "HUMAN", level: 1 }, updatedAt: "2025-01-01T00:00:00.000Z" },
+        {
+          slotIndex: 2,
+          isEmpty: false,
+          character: { id: "c2", name: "Hero", species: "HUMAN", level: 1 },
+          updatedAt: "2025-01-01T00:00:00.000Z",
+        },
         { slotIndex: 3, isEmpty: true, character: null, updatedAt: null },
       ],
     });

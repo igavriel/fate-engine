@@ -86,7 +86,9 @@ describe("POST /api/game/encounter/start", () => {
       data: { slotIndex: 1, choiceId: "enemy-1-0-0" },
     });
     const { CombatError } = await import("@/server/game/combatService");
-    mockStartEncounter.mockRejectedValue(new CombatError("SUMMARY_PENDING", "Acknowledge first", 400));
+    mockStartEncounter.mockRejectedValue(
+      new CombatError("SUMMARY_PENDING", "Acknowledge first", 400)
+    );
     const res = await POST(
       new Request("http://localhost/api/game/encounter/start", {
         method: "POST",

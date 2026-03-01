@@ -33,7 +33,9 @@ describe("respond helpers", () => {
 
   it("fail includes details when provided", async () => {
     const res = fail("VALIDATION", "Failed", 400, { field: "email" });
-    const data = (await res.json()) as { error: { code: string; message: string; details: unknown } };
+    const data = (await res.json()) as {
+      error: { code: string; message: string; details: unknown };
+    };
     expect(data.error.details).toEqual({ field: "email" });
   });
 

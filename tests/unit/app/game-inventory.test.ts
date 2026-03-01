@@ -10,12 +10,10 @@ vi.mock("@/server/auth/requireAuth", () => ({
   requireAuth: (req: Request) => mockRequireAuth(req),
 }));
 vi.mock("@/server/game/status", () => ({
-  getGameStatus: (userId: string, slotIndex: number) =>
-    mockGetGameStatus(userId, slotIndex),
+  getGameStatus: (userId: string, slotIndex: number) => mockGetGameStatus(userId, slotIndex),
 }));
 vi.mock("@/server/game/inventoryService", () => ({
-  getInventory: (userId: string, slotIndex: number) =>
-    mockGetInventory(userId, slotIndex),
+  getInventory: (userId: string, slotIndex: number) => mockGetInventory(userId, slotIndex),
 }));
 
 const sampleStatus = {
@@ -34,7 +32,13 @@ const sampleStatus = {
     lastOutcome: "NONE",
   },
 };
-const sampleInventory: { id: string; runId: string; itemCatalogId: string; quantity: number; catalog: object }[] = [];
+const sampleInventory: {
+  id: string;
+  runId: string;
+  itemCatalogId: string;
+  quantity: number;
+  catalog: object;
+}[] = [];
 
 describe("GET /api/game/inventory", () => {
   beforeEach(() => {
@@ -45,9 +49,7 @@ describe("GET /api/game/inventory", () => {
 
   it("returns 401 when not authenticated", async () => {
     mockRequireAuth.mockResolvedValue(null);
-    const res = await GET(
-      new Request("http://localhost/api/game/inventory?slotIndex=1")
-    );
+    const res = await GET(new Request("http://localhost/api/game/inventory?slotIndex=1"));
     expect(res.status).toBe(401);
     expect(mockGetGameStatus).not.toHaveBeenCalled();
     expect(mockGetInventory).not.toHaveBeenCalled();
@@ -77,9 +79,7 @@ describe("GET /api/game/inventory", () => {
 
   it("returns GameError status when service throws GameError", async () => {
     mockRequireAuth.mockResolvedValue("user-1");
-    mockGetGameStatus.mockRejectedValue(
-      new GameError("SLOT_EMPTY", "Slot has no character", 400)
-    );
+    mockGetGameStatus.mockRejectedValue(new GameError("SLOT_EMPTY", "Slot has no character", 400));
     const res = await GET(
       new Request("http://localhost/api/game/inventory?slotIndex=1", {
         headers: { Cookie: "fe_auth=x" },

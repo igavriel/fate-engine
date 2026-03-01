@@ -29,10 +29,7 @@ export function equipSwap(
 /**
  * Unequip a slot. Returns new equipment state.
  */
-export function unequipSlot(
-  current: EquipmentState,
-  slot: "weapon" | "armor"
-): EquipmentState {
+export function unequipSlot(current: EquipmentState, slot: "weapon" | "armor"): EquipmentState {
   if (slot === "weapon") {
     return { ...current, weaponInventoryItemId: null };
   }

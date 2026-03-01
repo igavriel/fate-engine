@@ -21,8 +21,7 @@ vi.mock("@/server/game/inventoryService", () => ({
     (mockGetInventory as vi.Mock)(userId, slotIndex),
 }));
 vi.mock("@/server/game/status", () => ({
-  getGameStatus: (userId: string, slotIndex: number) =>
-    mockGetGameStatus(userId, slotIndex),
+  getGameStatus: (userId: string, slotIndex: number) => mockGetGameStatus(userId, slotIndex),
 }));
 
 const sampleStatus = {
@@ -83,9 +82,7 @@ describe("POST /api/game/unequip", () => {
       success: true,
       data: { slotIndex: 1, equipmentSlot: "weapon" as const },
     });
-    mockUnequipItem.mockRejectedValue(
-      new GameError("SLOT_EMPTY", "Slot empty", 400)
-    );
+    mockUnequipItem.mockRejectedValue(new GameError("SLOT_EMPTY", "Slot empty", 400));
     const res = await POST(
       new Request("http://localhost/api/game/unequip", {
         method: "POST",

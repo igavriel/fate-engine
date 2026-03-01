@@ -35,7 +35,10 @@ async function ensureHubSlot1(page: import("@playwright/test").Page) {
     await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
     const navigatedToGame = await Promise.race([
       page.waitForURL(/\/game\?slotIndex=1/, { timeout: 5000 }).then(() => true),
-      page.getByText(/failed to create character/i).waitFor({ state: "visible", timeout: 5000 }).then(() => false),
+      page
+        .getByText(/failed to create character/i)
+        .waitFor({ state: "visible", timeout: 5000 })
+        .then(() => false),
     ]).catch(() => false);
     if (!navigatedToGame && page.url().includes("/create")) {
       await page.goto("/slots");
@@ -56,7 +59,9 @@ async function ensureHubSlot1(page: import("@playwright/test").Page) {
           .click();
         await expect(page).toHaveURL(/\/create\?slotIndex=1/);
         await page.getByLabel(/name/i).fill("E2E Hero");
-        await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+        await page
+          .getByRole("button", { name: /create & enter|create/i })
+          .click({ noWaitAfter: true });
         await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 5000 });
       }
     }
@@ -75,7 +80,9 @@ test.describe("Combat flow", () => {
     await ensureHubSlot1(page);
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
 
-    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({
+      timeout: 5000,
+    });
     await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
     await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 5000 });
     await expect(page.getByRole("heading", { name: /combat/i })).toBeVisible();
@@ -141,7 +148,10 @@ test.describe("Combat flow", () => {
       const fightBtn = page.getByRole("button", { name: /fight/i }).first();
       await expect(fightBtn).toBeVisible({ timeout: 5000 });
       const toughCard = page.locator("div.rounded-lg").filter({ hasText: "TOUGH" }).first();
-      if ((await toughCard.count()) > 0 && (await toughCard.getByRole("button", { name: /fight/i }).count()) > 0) {
+      if (
+        (await toughCard.count()) > 0 &&
+        (await toughCard.getByRole("button", { name: /fight/i }).count()) > 0
+      ) {
         await toughCard.getByRole("button", { name: /fight/i }).click({ noWaitAfter: true });
       } else {
         await fightBtn.click({ noWaitAfter: true });

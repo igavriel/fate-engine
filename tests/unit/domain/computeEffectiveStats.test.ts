@@ -10,9 +10,7 @@ describe("computeEffectiveStats", () => {
   });
 
   it("adds weapon attack bonus only", () => {
-    expect(
-      computeEffectiveStats(baseStats, { attackBonus: 2 }, null)
-    ).toEqual({
+    expect(computeEffectiveStats(baseStats, { attackBonus: 2 }, null)).toEqual({
       attack: 7,
       defense: 5,
       luck: 4,
@@ -21,9 +19,7 @@ describe("computeEffectiveStats", () => {
   });
 
   it("adds armor defense bonus only", () => {
-    expect(
-      computeEffectiveStats(baseStats, null, { defenseBonus: 3 })
-    ).toEqual({
+    expect(computeEffectiveStats(baseStats, null, { defenseBonus: 3 })).toEqual({
       attack: 5,
       defense: 8,
       luck: 4,
@@ -32,13 +28,7 @@ describe("computeEffectiveStats", () => {
   });
 
   it("adds both weapon and armor bonuses", () => {
-    expect(
-      computeEffectiveStats(
-        baseStats,
-        { attackBonus: 1 },
-        { defenseBonus: 2 }
-      )
-    ).toEqual({
+    expect(computeEffectiveStats(baseStats, { attackBonus: 1 }, { defenseBonus: 2 })).toEqual({
       attack: 6,
       defense: 7,
       luck: 4,

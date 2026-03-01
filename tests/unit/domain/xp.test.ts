@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  xpGainedForKill,
-  xpRequiredForLevel,
-  addXp,
-  applyLevelUps,
-} from "@/domain/progression/xp";
+import { xpGainedForKill, xpRequiredForLevel, addXp, applyLevelUps } from "@/domain/progression/xp";
 
 describe("xp", () => {
   it("xpGainedForKill = enemyLevel * 10", () => {

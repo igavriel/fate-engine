@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/prisma";
 import { requireRunForSlot } from "@/server/game/requireRunForSlot";
 import { equipSwap, unequipSlot, type ItemType } from "@/domain/inventory/equipSwap";
-import { usePotion } from "@/domain/inventory/usePotion";
+import { applyPotion } from "@/domain/inventory/usePotion";
 import { sellItem } from "@/domain/inventory/sellItem";
 
 export type InventoryItemRow = {
@@ -119,7 +119,7 @@ export async function unequipItem(
 /**
  * Use one potion from an inventory stack. Updates run hp and decrements or deletes stack.
  */
-export async function usePotionItem(
+export async function consumePotionItem(
   userId: string,
   slotIndex: 1 | 2 | 3,
   inventoryItemId: string
@@ -132,7 +132,7 @@ export async function usePotionItem(
   if (!invItem) throw new Error("ITEM_NOT_FOUND");
   if (invItem.itemCatalog.itemType !== "POTION") throw new Error("NOT_A_POTION");
   const hpMax = run.character.baseHpMax;
-  const { newHp, remainingQuantity } = usePotion(
+  const { newHp, remainingQuantity } = applyPotion(
     run.hp,
     hpMax,
     invItem.itemCatalog.healPercent,

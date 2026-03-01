@@ -20,11 +20,7 @@ describe("ensureUserSlots", () => {
   });
 
   it("does nothing when user already has 3 slots", async () => {
-    mockFindMany.mockResolvedValue([
-      { slotIndex: 1 },
-      { slotIndex: 2 },
-      { slotIndex: 3 },
-    ]);
+    mockFindMany.mockResolvedValue([{ slotIndex: 1 }, { slotIndex: 2 }, { slotIndex: 3 }]);
 
     await ensureUserSlots("user-1");
 
