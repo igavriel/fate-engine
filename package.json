@@ -12,14 +12,12 @@
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:check": "tsx scripts/dbCheck.ts",
+    "db:seed": "pnpm prisma db seed",
     "vercel-build": "prisma migrate deploy && prisma generate && next build",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "e2e": "playwright test",
-    "env:dev": "dotenv -e .env --",
-    "env:test": "dotenv -e .env.test --",
-    "db:check": "tsx scripts/dbCheck.ts",
-    "db:seed": "pnpm prisma db seed"
+    "e2e": "playwright test"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
