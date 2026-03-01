@@ -2,7 +2,8 @@ import { prisma } from "@/server/db/prisma";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
 import { json, serverError } from "@/server/http/respond";
 
-async function getDbCheck(_request: Request) {
+async function getDbCheck(request: Request) {
+  void request;
   try {
     const now = new Date().toISOString();
     await prisma.appConfig.upsert({

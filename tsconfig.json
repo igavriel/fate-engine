@@ -18,7 +18,8 @@
       "@/*": ["./*"],
       "@/server/*": ["./src/server/*"],
       "@/shared/*": ["./src/shared/*"],
-      "@/domain/*": ["./src/domain/*"]
+      "@/domain/*": ["./src/domain/*"],
+      "@/components/*": ["./src/components/*"]
     }
   },
   "include": [

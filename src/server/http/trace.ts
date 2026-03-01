@@ -20,11 +20,7 @@ export function getTraceId(req: Request): string {
  * If request has x-trace-id, that value is used; otherwise a new UUID is generated.
  * Used by withRequestLogging so that getTraceId(request) returns a stable value per request.
  */
-export async function runWithTraceId<T>(
-  request: Request,
-  fn: () => Promise<T>
-): Promise<T> {
-  const traceId =
-    request.headers.get("x-trace-id")?.trim() || crypto.randomUUID();
+export async function runWithTraceId<T>(request: Request, fn: () => Promise<T>): Promise<T> {
+  const traceId = request.headers.get("x-trace-id")?.trim() || crypto.randomUUID();
   return traceStore.run(traceId, fn);
 }

@@ -33,4 +33,12 @@ describe("trace", () => {
     });
     expect(captured).toBe("reuse-me");
   });
+
+  it("getTraceId returns new UUID when no header and no async context", () => {
+    const req = new Request("http://localhost/");
+    const traceId = getTraceId(req);
+    expect(traceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+  });
 });

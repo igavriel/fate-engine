@@ -65,6 +65,9 @@ export const baseStatsSchema = z.object({
   hpMax: z.number().int().min(1),
 });
 
+export const runStatusEnumSchema = z.enum(["ACTIVE", "OVER"]);
+export type RunStatusEnum = z.infer<typeof runStatusEnumSchema>;
+
 export const runStatusSchema = z.object({
   id: z.string().uuid(),
   seed: z.number().int(),
@@ -80,6 +83,8 @@ export const runStatusSchema = z.object({
     armor: z.string().uuid().nullable(),
   }),
   lastOutcome: z.string(),
+  status: runStatusEnumSchema,
+  isRecoverable: z.boolean(),
 });
 
 export const gameStatusResponseSchema = z.object({
@@ -113,3 +118,183 @@ export const enemiesResponseSchema = z.object({
 export type EnemyPreview = z.infer<typeof enemyPreviewSchema>;
 export type EnemyChoice = z.infer<typeof enemyChoiceSchema>;
 export type EnemiesResponse = z.infer<typeof enemiesResponseSchema>;
+
+// --- GET /api/game/inventory (response) + shared response envelope
+export const itemTypeSchema = z.enum(["WEAPON", "ARMOR", "POTION"]);
+export type ItemType = z.infer<typeof itemTypeSchema>;
+
+export const inventoryItemCatalogSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  itemType: itemTypeSchema,
+  attackBonus: z.number().int(),
+  defenseBonus: z.number().int(),
+  healPercent: z.number().int(),
+  sellValueCoins: z.number().int(),
+});
+
+export const inventoryItemSchema = z.object({
+  id: z.string().uuid(),
+  runId: z.string().uuid(),
+  itemCatalogId: z.string().uuid(),
+  quantity: z.number().int().min(1),
+  catalog: inventoryItemCatalogSchema,
+});
+
+export const getInventoryResponseSchema = z.array(inventoryItemSchema);
+export type InventoryItemCatalog = z.infer<typeof inventoryItemCatalogSchema>;
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+export type GetInventoryResponse = z.infer<typeof getInventoryResponseSchema>;
+
+/** Shared response shape for GET /api/game/inventory and POST equip/unequip/use/sell */
+export const zGameStatusRes = gameStatusResponseSchema;
+export const zGetInventoryRes = getInventoryResponseSchema;
+export const inventoryWithStatusResponseSchema = z.object({
+  status: zGameStatusRes,
+  inventory: zGetInventoryRes,
+});
+export type InventoryWithStatusResponse = z.infer<typeof inventoryWithStatusResponseSchema>;
+
+// --- POST /api/game/equip (request)
+export const equipBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  equipmentSlot: z.enum(["weapon", "armor"]),
+  inventoryItemId: z.string().uuid(),
+});
+export type EquipBody = z.infer<typeof equipBodySchema>;
+
+// --- POST /api/game/unequip (request)
+export const unequipBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  equipmentSlot: z.enum(["weapon", "armor"]),
+});
+export type UnequipBody = z.infer<typeof unequipBodySchema>;
+
+// --- POST /api/game/use (request)
+export const useItemBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  inventoryItemId: z.string().uuid(),
+});
+export type UseItemBody = z.infer<typeof useItemBodySchema>;
+
+// --- POST /api/game/sell (request)
+export const sellItemBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  inventoryItemId: z.string().uuid(),
+});
+export type SellItemBody = z.infer<typeof sellItemBodySchema>;
+
+// --- POST /api/game/slots/delete (request)
+export const deleteSlotBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+});
+export type DeleteSlotBody = z.infer<typeof deleteSlotBodySchema>;
+
+// --- POST /api/game/run/end (request / response)
+export const runEndBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+});
+export const runEndResponseSchema = z.object({
+  status: gameStatusResponseSchema,
+});
+export type RunEndBody = z.infer<typeof runEndBodySchema>;
+export type RunEndResponse = z.infer<typeof runEndResponseSchema>;
+
+// --- Phase 1C: Combat
+
+// POST /api/game/encounter/start
+export const startEncounterBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  choiceId: z.string().min(1, "choiceId is required"),
+});
+export const startEncounterResponseSchema = z.object({
+  encounterId: z.string().uuid(),
+});
+export type StartEncounterBody = z.infer<typeof startEncounterBodySchema>;
+export type StartEncounterResponse = z.infer<typeof startEncounterResponseSchema>;
+
+// GET /api/game/combat
+export const combatLogEntrySchema = z.object({
+  t: z.string().datetime(),
+  text: z.string(),
+});
+export const combatPlayerSchema = z.object({
+  hp: z.number().int().min(0),
+  hpMax: z.number().int().min(1),
+  effectiveAttack: z.number().int().min(0),
+  effectiveDefense: z.number().int().min(0),
+  luck: z.number().int().min(0),
+});
+export const combatEnemySchema = z.object({
+  name: z.string(),
+  species: z.string(),
+  level: z.number().int().min(1),
+  hp: z.number().int().min(0),
+  hpMax: z.number().int().min(1),
+});
+export const combatStateResponseSchema = z.object({
+  slotIndex: slotIndexSchema,
+  encounterId: z.string().uuid(),
+  player: combatPlayerSchema,
+  enemy: combatEnemySchema,
+  log: z.array(combatLogEntrySchema),
+  canHeal: z.boolean(),
+});
+export type CombatLogEntry = z.infer<typeof combatLogEntrySchema>;
+export type CombatStateResponse = z.infer<typeof combatStateResponseSchema>;
+
+// POST /api/game/action
+export const actionTypeSchema = z.enum(["ATTACK", "HEAL", "RETREAT"]);
+export const actionBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  type: actionTypeSchema,
+});
+export const actionOutcomeSchema = z.enum(["CONTINUE", "WIN", "RETREAT", "DEFEAT"]);
+export const actionResponseSchema = z.object({
+  outcome: actionOutcomeSchema,
+});
+export type ActionBody = z.infer<typeof actionBodySchema>;
+export type ActionOutcome = z.infer<typeof actionOutcomeSchema>;
+export type ActionResponse = z.infer<typeof actionResponseSchema>;
+
+// GET /api/game/summary
+export const summaryOutcomeSchema = z.enum(["WIN", "RETREAT", "DEFEAT"]);
+export const summaryEnemySchema = z.object({
+  name: z.string(),
+  species: z.string(),
+  level: z.number().int().min(1),
+});
+export const summaryDeltaSchema = z.object({
+  xpGained: z.number().int().min(0),
+  coinsGained: z.number().int(),
+  hpChange: z.number().int(),
+});
+export const summaryLootItemSchema = z.object({
+  name: z.string(),
+  itemType: itemTypeSchema,
+  quantity: z.number().int().min(1),
+  attackBonus: z.number().int().optional(),
+  defenseBonus: z.number().int().optional(),
+  healPercent: z.number().int().optional(),
+});
+export const summaryResponseSchema = z.object({
+  slotIndex: slotIndexSchema,
+  outcome: summaryOutcomeSchema,
+  enemy: summaryEnemySchema,
+  delta: summaryDeltaSchema,
+  loot: z.array(summaryLootItemSchema),
+  leveledUp: z.boolean(),
+  newLevel: z.number().int().min(1).optional(),
+});
+export type SummaryResponse = z.infer<typeof summaryResponseSchema>;
+
+// POST /api/game/summary/ack
+export const summaryAckBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+});
+export const summaryAckResponseSchema = z.object({
+  status: gameStatusResponseSchema,
+  inventory: getInventoryResponseSchema,
+});
+export type SummaryAckBody = z.infer<typeof summaryAckBodySchema>;
+export type SummaryAckResponse = z.infer<typeof summaryAckResponseSchema>;

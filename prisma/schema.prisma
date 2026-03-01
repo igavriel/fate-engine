@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model AppConfig {
@@ -62,19 +61,25 @@ model Character {
   characterStats CharacterStats?
 }
 
+enum RunStatus {
+  ACTIVE
+  OVER
+}
+
 model Run {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   userId       String
   characterId  String
   seed         Int
-  fightCounter Int      @default(0)
-  turnCounter  Int      @default(0)
+  fightCounter Int       @default(0)
+  turnCounter  Int       @default(0)
   hp           Int
-  coins        Int      @default(0)
-  lastOutcome  String   @default("NONE")
+  coins        Int       @default(0)
+  lastOutcome  String    @default("NONE")
+  status       RunStatus @default(ACTIVE)
   stateJson    Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   character         Character          @relation(fields: [characterId], references: [id], onDelete: Cascade)
@@ -87,6 +92,10 @@ model CharacterStats {
   id               String   @id @default(uuid())
   characterId      String   @unique
   totalKills       Int      @default(0)
+  totalFights      Int      @default(0)
+  wins             Int      @default(0)
+  losses           Int      @default(0)
+  retreats         Int      @default(0)
   totalCoinsEarned Int      @default(0)
   enemiesBySpecies Json     @default("{}")
   lastFightSummary Json?
@@ -95,13 +104,22 @@ model CharacterStats {
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 }
 
+enum ItemType {
+  WEAPON
+  ARMOR
+  POTION
+}
+
 model ItemCatalog {
-  id        String   @id @default(uuid())
-  slug      String   @unique
-  name      String
-  kind      String   // WEAPON, ARMOR, CONSUMABLE, etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String   @unique
+  itemType        ItemType
+  attackBonus     Int      @default(0)
+  defenseBonus    Int      @default(0)
+  healPercent     Int      @default(25)
+  sellValueCoins  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   runInventoryItems RunInventoryItem[]
 }
@@ -112,7 +130,6 @@ model RunInventoryItem {
   itemCatalogId  String
   quantity       Int      @default(1)
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
 
   run            Run              @relation(fields: [runId], references: [id], onDelete: Cascade)
   itemCatalog    ItemCatalog      @relation(fields: [itemCatalogId], references: [id], onDelete: Cascade)
@@ -121,8 +138,7 @@ model RunInventoryItem {
 }
 
 model RunEquipment {
-  id                      String   @id @default(uuid())
-  runId                   String   @unique
+  runId                   String   @id
   weaponInventoryItemId   String?
   armorInventoryItemId    String?
   updatedAt               DateTime @updatedAt

@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  registerBodySchema,
-  loginBodySchema,
-} from "@/shared/zod/auth";
+import { registerBodySchema, loginBodySchema } from "@/shared/zod/auth";
 import { slotIndexQuerySchema, createCharacterBodySchema } from "@/shared/zod/game";
 import { errorPayload } from "@/shared/zod/common";
 
@@ -14,9 +11,7 @@ describe("auth schemas", () => {
   });
 
   it("registerBodySchema rejects short password", () => {
-    expect(() =>
-      registerBodySchema.parse({ email: "a@b.co", password: "short" })
-    ).toThrow();
+    expect(() => registerBodySchema.parse({ email: "a@b.co", password: "short" })).toThrow();
   });
 
   it("loginBodySchema accepts valid input", () => {

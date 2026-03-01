@@ -49,6 +49,7 @@ export type RequireRunForSlotRun = {
   hp: number;
   coins: number;
   lastOutcome: string;
+  status: "ACTIVE" | "OVER";
   stateJson: unknown;
   createdAt: Date;
   updatedAt: Date;
@@ -71,7 +72,7 @@ export async function requireRunForSlot(
   userId: string,
   slotIndex: number
 ): Promise<RequireRunForSlotResult> {
-  const slot = await (prisma as any).saveSlot.findUnique({
+  const slot = await prisma.saveSlot.findUnique({
     where: { userId_slotIndex: { userId, slotIndex } },
     include: {
       run: { include: { character: true } },

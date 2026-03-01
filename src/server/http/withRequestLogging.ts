@@ -27,10 +27,7 @@ export function withRequestLogging(handler: RouteHandler): RouteHandler {
         const response = await handler(request, context);
         const durationMs = Date.now() - start;
         const status = response.status;
-        log.info(
-          { route, method, status, durationMs },
-          "request"
-        );
+        log.info({ route, method, status, durationMs }, "request");
         return addTraceIdToResponse(response, traceId);
       } catch (err) {
         const durationMs = Date.now() - start;

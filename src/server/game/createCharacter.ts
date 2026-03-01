@@ -90,6 +90,24 @@ export async function createCharacter(
     data: { runId: run.id },
   });
 
+  const starterItemNames = [
+    { name: "Rusty Sword", quantity: 1 },
+    { name: "Cloth Tunic", quantity: 1 },
+    { name: "Small Potion", quantity: 2 },
+  ] as const;
+  const catalogItems = await prisma.itemCatalog.findMany({
+    where: { name: { in: starterItemNames.map((s) => s.name) } },
+    select: { id: true, name: true },
+  });
+  const catalogByName = new Map(catalogItems.map((c) => [c.name, c.id]));
+  for (const { name: itemName, quantity } of starterItemNames) {
+    const itemId = catalogByName.get(itemName);
+    if (!itemId) continue;
+    await prisma.runInventoryItem.create({
+      data: { runId: run.id, itemCatalogId: itemId, quantity },
+    });
+  }
+
   await prisma.saveSlot.update({
     where: { id: slot.id },
     data: { characterId: character.id, runId: run.id },
