@@ -178,3 +178,9 @@ export const sellItemBodySchema = z.object({
   inventoryItemId: z.string().uuid(),
 });
 export type SellItemBody = z.infer<typeof sellItemBodySchema>;
+
+// --- POST /api/game/slots/delete (request)
+export const deleteSlotBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+});
+export type DeleteSlotBody = z.infer<typeof deleteSlotBodySchema>;

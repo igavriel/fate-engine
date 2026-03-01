@@ -14,6 +14,8 @@ export default function SlotsPage() {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Slot | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +44,33 @@ export default function SlotsPage() {
       cancelled = true;
     };
   }, []);
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/game/slots/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ slotIndex: pendingDelete.slotIndex }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: { message?: string } };
+        setError(data.error?.message ?? "Failed to delete slot");
+        setPendingDelete(null);
+        return;
+      }
+      const data = (await res.json()) as { slots: Slot[] };
+      setSlots(data.slots);
+      setPendingDelete(null);
+    } catch {
+      setError("Network error");
+      setPendingDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -84,12 +113,22 @@ export default function SlotsPage() {
                 <p className="text-xs text-zinc-500">
                   {slot.character?.species} · Level {slot.character?.level}
                 </p>
-                <Link
-                  href={`/game?slotIndex=${slot.slotIndex}`}
-                  className="mt-4 block w-full rounded bg-zinc-600 py-2 text-center text-sm font-medium text-zinc-100 hover:bg-zinc-500"
-                >
-                  Continue
-                </Link>
+                <div className="mt-4 flex gap-2">
+                  <Link
+                    href={`/game?slotIndex=${slot.slotIndex}`}
+                    className="flex-1 rounded bg-zinc-600 py-2 text-center text-sm font-medium text-zinc-100 hover:bg-zinc-500"
+                  >
+                    Continue
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPendingDelete(slot)}
+                    className="rounded border border-red-800 bg-transparent px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-900/30"
+                    aria-label={`Delete slot ${slot.slotIndex}`}
+                  >
+                    Delete
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -98,6 +137,43 @@ export default function SlotsPage() {
       <Link href="/" className="mt-8 inline-block text-sm text-zinc-500 hover:text-zinc-300">
         ← Back to home
       </Link>
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-slot-title"
+        >
+          <div className="w-full max-w-sm rounded-lg border border-zinc-600 bg-zinc-900 p-5 shadow-xl">
+            <h2 id="delete-slot-title" className="text-lg font-semibold text-zinc-100">
+              Delete save?
+            </h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              Slot {pendingDelete.slotIndex} ({pendingDelete.character?.name}) will be permanently
+              deleted. This cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+                className="flex-1 rounded border border-zinc-600 bg-zinc-800 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex-1 rounded bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
