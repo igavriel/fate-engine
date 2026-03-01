@@ -1,9 +1,10 @@
 import { prisma } from "@/server/db/prisma";
 import { getAuthCookie } from "@/server/auth/cookies";
 import { verifyToken } from "@/server/auth/jwt";
+import { withRequestLogging } from "@/server/http/withRequestLogging";
 import { json, unauthorized } from "@/server/http/respond";
 
-export async function GET(request: Request) {
+async function getMe(request: Request) {
   const token = getAuthCookie(request);
   if (!token) return unauthorized();
 
@@ -18,3 +19,5 @@ export async function GET(request: Request) {
 
   return json({ user });
 }
+
+export const GET = withRequestLogging(getMe);

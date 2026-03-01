@@ -1,7 +1,8 @@
 import { prisma } from "@/server/db/prisma";
+import { withRequestLogging } from "@/server/http/withRequestLogging";
 import { json, serverError } from "@/server/http/respond";
 
-export async function GET() {
+async function getDbCheck(_request: Request) {
   try {
     const now = new Date().toISOString();
     await prisma.appConfig.upsert({
@@ -18,3 +19,5 @@ export async function GET() {
     return serverError("Database connection failed");
   }
 }
+
+export const GET = withRequestLogging(getDbCheck);

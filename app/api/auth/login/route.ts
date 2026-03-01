@@ -2,10 +2,11 @@ import { prisma } from "@/server/db/prisma";
 import { verifyPassword } from "@/server/auth/password";
 import { signToken } from "@/server/auth/jwt";
 import { setAuthCookie } from "@/server/auth/cookies";
+import { withRequestLogging } from "@/server/http/withRequestLogging";
 import { badRequest, unauthorized } from "@/server/http/respond";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+async function postLogin(request: Request) {
   const body = await request.json();
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
@@ -26,3 +27,5 @@ export async function POST(request: Request) {
   response.headers.set("Set-Cookie", setAuthCookie(token));
   return response;
 }
+
+export const POST = withRequestLogging(postLogin);

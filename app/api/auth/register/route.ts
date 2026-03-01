@@ -1,8 +1,9 @@
 import { prisma } from "@/server/db/prisma";
 import { hashPassword } from "@/server/auth/password";
+import { withRequestLogging } from "@/server/http/withRequestLogging";
 import { badRequest, json, serverError } from "@/server/http/respond";
 
-export async function POST(request: Request) {
+async function postRegister(request: Request) {
   try {
     const body = await request.json();
     const email = typeof body?.email === "string" ? body.email.trim() : "";
@@ -33,3 +34,5 @@ export async function POST(request: Request) {
     return serverError("Registration failed");
   }
 }
+
+export const POST = withRequestLogging(postRegister);

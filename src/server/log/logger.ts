@@ -12,3 +12,10 @@ export const logger =
 export function withTraceId(traceId: string) {
   return logger.child({ traceId });
 }
+
+/**
+ * Returns a child logger with traceId bound. Use for request-scoped logging.
+ */
+export function createRequestLogger(traceId: string) {
+  return logger.child({ traceId });
+}
