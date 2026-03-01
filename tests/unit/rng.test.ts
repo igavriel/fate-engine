@@ -36,4 +36,9 @@ describe("createRng (Mulberry32)", () => {
     expect(results.size).toBeGreaterThanOrEqual(1);
     results.forEach((v) => expect(arr).toContain(v));
   });
+
+  it("pick throws when array is empty", () => {
+    const rng = createRng(1);
+    expect(() => rng.pick([])).toThrow("Cannot pick from empty array");
+  });
 });
