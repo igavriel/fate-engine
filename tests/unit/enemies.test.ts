@@ -41,7 +41,9 @@ describe("generateEnemyChoices", () => {
     const result = generateEnemyChoices({ seed: 7, fightCounter: 0, playerLevel: 2 });
     result.forEach((e) => {
       expect(e.preview.estimatedLootCoinsMin).toBeGreaterThanOrEqual(0);
-      expect(e.preview.estimatedLootCoinsMax).toBeGreaterThanOrEqual(e.preview.estimatedLootCoinsMin);
+      expect(e.preview.estimatedLootCoinsMax).toBeGreaterThanOrEqual(
+        e.preview.estimatedLootCoinsMin
+      );
     });
   });
 });

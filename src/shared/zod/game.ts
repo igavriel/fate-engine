@@ -1,11 +1,7 @@
 import { z } from "zod";
 
 /** 1-based slot index (1..3) */
-export const slotIndexSchema = z
-  .number()
-  .int()
-  .min(1)
-  .max(3);
+export const slotIndexSchema = z.number().int().min(1).max(3);
 
 /** Coerce query string to slot index */
 export const slotIndexQuerySchema = z.object({

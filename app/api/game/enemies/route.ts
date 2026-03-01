@@ -8,7 +8,9 @@ export async function GET(request: Request) {
   if (!userId) return unauthorized();
 
   const url = new URL(request.url);
-  const parsed = slotIndexQuerySchema.safeParse({ slotIndex: url.searchParams.get("slotIndex") ?? "" });
+  const parsed = slotIndexQuerySchema.safeParse({
+    slotIndex: url.searchParams.get("slotIndex") ?? "",
+  });
   if (!parsed.success) {
     return badRequest(parsed.error.issues[0]?.message ?? "Invalid slotIndex");
   }

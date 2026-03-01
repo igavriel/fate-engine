@@ -96,9 +96,7 @@ function GamePageInner() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center text-zinc-400">
-        Loading game...
-      </div>
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center text-zinc-400">Loading game...</div>
     );
   }
 
@@ -145,10 +143,7 @@ function GamePageInner() {
         <h2 className="text-lg font-semibold text-zinc-200">Enemies</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {enemies?.map((e) => (
-            <div
-              key={e.choiceId}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
-            >
+            <div key={e.choiceId} className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-400">{e.tier}</span>
                 <span className="text-xs text-zinc-500">Lv.{e.level}</span>
@@ -184,7 +179,11 @@ function GamePageInner() {
 
 export default function GamePage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-4xl px-4 py-12 text-center text-zinc-400">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-4xl px-4 py-12 text-center text-zinc-400">Loading...</div>
+      }
+    >
       <GamePageInner />
     </Suspense>
   );

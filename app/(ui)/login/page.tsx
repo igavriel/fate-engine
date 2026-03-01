@@ -21,7 +21,10 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = (await res.json()) as { error?: string | { code?: string; message?: string }; user?: unknown };
+      const data = (await res.json()) as {
+        error?: string | { code?: string; message?: string };
+        user?: unknown;
+      };
       if (!res.ok) {
         const msg = typeof data.error === "object" ? data.error?.message : data.error;
         setMessage({ type: "err", text: msg ?? "Request failed" });

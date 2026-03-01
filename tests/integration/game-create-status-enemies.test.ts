@@ -6,10 +6,7 @@ import { GET as getEnemies } from "@/app/api/game/enemies/route";
 import { prisma } from "@/server/db/prisma";
 import { hashPassword } from "@/server/auth/password";
 import { signToken } from "@/server/auth/jwt";
-import {
-  gameStatusResponseSchema,
-  enemiesResponseSchema,
-} from "@/shared/zod/game";
+import { gameStatusResponseSchema, enemiesResponseSchema } from "@/shared/zod/game";
 
 const defaultTestUrl = "postgresql://localhost:5432/dummy";
 const hasRealDb =
@@ -90,11 +87,7 @@ describe("create character then status and enemies", () => {
     expect(enemiesParsed.success).toBe(true);
     if (enemiesParsed.success) {
       expect(enemiesParsed.data.enemies).toHaveLength(3);
-      expect(enemiesParsed.data.enemies.map((e) => e.tier)).toEqual([
-        "WEAK",
-        "NORMAL",
-        "TOUGH",
-      ]);
+      expect(enemiesParsed.data.enemies.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "TOUGH"]);
     }
   });
 });

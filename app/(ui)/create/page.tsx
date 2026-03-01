@@ -23,7 +23,7 @@ function CreatePageInner() {
 
   useEffect(() => {
     if (!name) setName(randomName());
-  }, []);
+  }, [name]);
 
   const validSlot = slotIndex && ["1", "2", "3"].includes(slotIndex);
   const slotNum = validSlot ? parseInt(slotIndex, 10) : 1;
@@ -131,7 +131,9 @@ function CreatePageInner() {
 
 export default function CreatePage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-12 text-zinc-400">Loading...</div>}>
+    <Suspense
+      fallback={<div className="mx-auto max-w-md px-4 py-12 text-zinc-400">Loading...</div>}
+    >
       <CreatePageInner />
     </Suspense>
   );

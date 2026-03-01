@@ -18,7 +18,12 @@ function getSpeciesBaseline(species: Species) {
 }
 
 /** Deterministic modifier in [-1, 1] per stat from seed */
-function getSeedModifiers(seed: number): { attack: number; defense: number; luck: number; hpMax: number } {
+function getSeedModifiers(seed: number): {
+  attack: number;
+  defense: number;
+  luck: number;
+  hpMax: number;
+} {
   const rng = createRng(seed);
   return {
     attack: rng.int(-1, 1),

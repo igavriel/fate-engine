@@ -1,8 +1,6 @@
 import type { z } from "zod";
 
-export type ParseJsonResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+export type ParseJsonResult<T> = { success: true; data: T } | { success: false; error: string };
 
 /**
  * Parse request body as JSON and validate with Zod schema.
@@ -23,6 +21,8 @@ export async function parseJson<T extends z.ZodType>(
     return { success: true, data: result.data as z.infer<T> };
   }
   const first = result.error.issues[0];
-  const message = first ? `${first.path.join(".") || "body"}: ${first.message}` : "Validation failed";
+  const message = first
+    ? `${first.path.join(".") || "body"}: ${first.message}`
+    : "Validation failed";
   return { success: false, error: message };
 }

@@ -45,9 +45,7 @@ export default function SlotsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center text-zinc-400">
-        Loading slots...
-      </div>
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center text-zinc-400">Loading slots...</div>
     );
   }
 
@@ -68,10 +66,7 @@ export default function SlotsPage() {
       <p className="mt-1 text-zinc-400">Choose a slot to start or continue.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {slots?.map((slot) => (
-          <div
-            key={slot.slotIndex}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
-          >
+          <div key={slot.slotIndex} className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
             <div className="font-medium text-zinc-200">Slot {slot.slotIndex}</div>
             {slot.isEmpty ? (
               <>

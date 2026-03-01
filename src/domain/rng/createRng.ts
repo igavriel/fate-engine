@@ -19,7 +19,7 @@ export function createRng(seed: number): Rng {
     },
     pick<T>(array: readonly T[]): T {
       if (array.length === 0) throw new Error("Cannot pick from empty array");
-      return array[next() * array.length | 0]!;
+      return array[(next() * array.length) | 0]!;
     },
   };
 }

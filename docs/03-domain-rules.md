@@ -19,10 +19,10 @@
 
 - Three tiers: **WEAK**, **NORMAL**, **TOUGH**.
 - **Enemy level:**  
-  `enemyLevel = max(1, playerLevel + tierModifier)`  
-  - WEAK: tierModifier = -1  
-  - NORMAL: tierModifier = 0  
-  - TOUGH: tierModifier = +1  
+  `enemyLevel = max(1, playerLevel + tierModifier)`
+  - WEAK: tierModifier = -1
+  - NORMAL: tierModifier = 0
+  - TOUGH: tierModifier = +1
 - Names and species are derived deterministically from seed, fightCounter, and tier index.
 
 ## Enemy loot preview (Phase 1A)

@@ -14,13 +14,24 @@ const TIER_WEIGHT: Record<EnemyTier, number> = {
 };
 
 const ENEMY_NAMES = [
-  "Goblin", "Orc", "Skeleton", "Wolf", "Spider", "Bat", "Rat", "Slime",
-  "Bandit", "Cultist", "Wraith", "Imp", "Harpy", "Troll", "Ogre",
+  "Goblin",
+  "Orc",
+  "Skeleton",
+  "Wolf",
+  "Spider",
+  "Bat",
+  "Rat",
+  "Slime",
+  "Bandit",
+  "Cultist",
+  "Wraith",
+  "Imp",
+  "Harpy",
+  "Troll",
+  "Ogre",
 ];
 
-const ENEMY_SPECIES = [
-  "Beast", "Undead", "Humanoid", "Demon", "Elemental", "Construct",
-];
+const ENEMY_SPECIES = ["Beast", "Undead", "Humanoid", "Demon", "Elemental", "Construct"];
 
 const TIERS: EnemyTier[] = ["WEAK", "NORMAL", "TOUGH"];
 

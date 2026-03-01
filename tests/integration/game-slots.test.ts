@@ -12,7 +12,6 @@ const hasRealDb =
   !process.env.DATABASE_URL.includes("dummy");
 
 describe("GET /api/game/slots", () => {
-  let testUserId: string;
   let authCookie: string;
 
   beforeAll(async () => {
@@ -23,7 +22,6 @@ describe("GET /api/game/slots", () => {
       data: { email, passwordHash },
       select: { id: true, email: true },
     });
-    testUserId = user.id;
     const token = signToken({ sub: user.id, email: user.email });
     authCookie = `fe_auth=${encodeURIComponent(token)}`;
   });
