@@ -1,9 +1,10 @@
 import { requireAuth } from "@/server/auth/requireAuth";
+import { GameError } from "@/server/game/requireRunForSlot";
 import { getGameStatus } from "@/server/game/status";
 import { slotIndexQuerySchema } from "@/shared/zod/game";
 import { getTraceId } from "@/server/http/trace";
 import { withRequestLogging } from "@/server/http/withRequestLogging";
-import { badRequest, json, notFound, unauthorized } from "@/server/http/respond";
+import { badRequest, errorResponse, json, unauthorized } from "@/server/http/respond";
 import { createRequestLogger } from "@/server/log/logger";
 
 async function getStatus(request: Request) {
@@ -20,16 +21,16 @@ async function getStatus(request: Request) {
 
   const slotIndex = parsed.data.slotIndex as 1 | 2 | 3;
   const traceId = getTraceId(request);
-  const status = await getGameStatus(userId, slotIndex);
-  if (!status) return notFound("Slot not found or empty");
+  const log = createRequestLogger(traceId).child({ userId, slotIndex });
 
-  const log = createRequestLogger(traceId).child({
-    userId,
-    slotIndex,
-    runId: status.run.id,
-  });
-  log.info({ event: "get_status", runId: status.run.id }, "get_status");
-  return json(status);
+  try {
+    const status = await getGameStatus(userId, slotIndex);
+    log.info({ event: "get_status", runId: status.run.id }, "get_status");
+    return json(status);
+  } catch (err) {
+    if (err instanceof GameError) return errorResponse(err.code, err.message, err.status);
+    throw err;
+  }
 }
 
 export const GET = withRequestLogging(getStatus);

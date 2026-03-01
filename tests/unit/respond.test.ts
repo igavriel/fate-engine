@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { json, badRequest, unauthorized, notFound, serverError } from "@/server/http/respond";
+import {
+  json,
+  badRequest,
+  unauthorized,
+  notFound,
+  serverError,
+  errorResponse,
+} from "@/server/http/respond";
 
 describe("respond helpers", () => {
   it("json returns 200 and body", async () => {
@@ -44,5 +51,13 @@ describe("respond helpers", () => {
     const data = (await res.json()) as { error: { code: string; message: string } };
     expect(data.error.code).toBe("INTERNAL_ERROR");
     expect(data.error.message).toBe("DB failed");
+  });
+
+  it("errorResponse returns custom code and status", async () => {
+    const res = errorResponse("SLOT_NOT_FOUND", "Slot not found", 404);
+    expect(res.status).toBe(404);
+    const data = (await res.json()) as { error: { code: string; message: string } };
+    expect(data.error.code).toBe("SLOT_NOT_FOUND");
+    expect(data.error.message).toBe("Slot not found");
   });
 });

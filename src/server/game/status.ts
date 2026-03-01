@@ -1,27 +1,11 @@
-import { prisma } from "@/server/db/prisma";
+import { requireRunForSlot } from "@/server/game/requireRunForSlot";
 import type { GameStatusResponse } from "@/shared/zod/game";
 
 export async function getGameStatus(
   userId: string,
   slotIndex: 1 | 2 | 3
-): Promise<GameStatusResponse | null> {
-  const slot = await prisma.saveSlot.findUnique({
-    where: { userId_slotIndex: { userId, slotIndex } },
-    include: {
-      run: {
-        include: {
-          character: true,
-        },
-      },
-    },
-  });
-
-  if (!slot || !slot.runId || !slot.run || !slot.characterId) {
-    return null;
-  }
-
-  const run = slot.run;
-  const char = run.character;
+): Promise<GameStatusResponse> {
+  const { character: char, run } = await requireRunForSlot(userId, slotIndex);
 
   const baseStats = {
     attack: char.baseAttack,
