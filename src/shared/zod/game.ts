@@ -113,3 +113,68 @@ export const enemiesResponseSchema = z.object({
 export type EnemyPreview = z.infer<typeof enemyPreviewSchema>;
 export type EnemyChoice = z.infer<typeof enemyChoiceSchema>;
 export type EnemiesResponse = z.infer<typeof enemiesResponseSchema>;
+
+// --- GET /api/game/inventory (response) + shared response envelope
+export const itemTypeSchema = z.enum(["WEAPON", "ARMOR", "POTION"]);
+export type ItemType = z.infer<typeof itemTypeSchema>;
+
+export const inventoryItemCatalogSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  itemType: itemTypeSchema,
+  attackBonus: z.number().int(),
+  defenseBonus: z.number().int(),
+  healPercent: z.number().int(),
+  sellValueCoins: z.number().int(),
+});
+
+export const inventoryItemSchema = z.object({
+  id: z.string().uuid(),
+  runId: z.string().uuid(),
+  itemCatalogId: z.string().uuid(),
+  quantity: z.number().int().min(1),
+  catalog: inventoryItemCatalogSchema,
+});
+
+export const getInventoryResponseSchema = z.array(inventoryItemSchema);
+export type InventoryItemCatalog = z.infer<typeof inventoryItemCatalogSchema>;
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+export type GetInventoryResponse = z.infer<typeof getInventoryResponseSchema>;
+
+/** Shared response shape for GET /api/game/inventory and POST equip/unequip/use/sell */
+export const zGameStatusRes = gameStatusResponseSchema;
+export const zGetInventoryRes = getInventoryResponseSchema;
+export const inventoryWithStatusResponseSchema = z.object({
+  status: zGameStatusRes,
+  inventory: zGetInventoryRes,
+});
+export type InventoryWithStatusResponse = z.infer<typeof inventoryWithStatusResponseSchema>;
+
+// --- POST /api/game/equip (request)
+export const equipBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  equipmentSlot: z.enum(["weapon", "armor"]),
+  inventoryItemId: z.string().uuid(),
+});
+export type EquipBody = z.infer<typeof equipBodySchema>;
+
+// --- POST /api/game/unequip (request)
+export const unequipBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  equipmentSlot: z.enum(["weapon", "armor"]),
+});
+export type UnequipBody = z.infer<typeof unequipBodySchema>;
+
+// --- POST /api/game/use (request)
+export const useItemBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  inventoryItemId: z.string().uuid(),
+});
+export type UseItemBody = z.infer<typeof useItemBodySchema>;
+
+// --- POST /api/game/sell (request)
+export const sellItemBodySchema = z.object({
+  slotIndex: slotIndexSchema,
+  inventoryItemId: z.string().uuid(),
+});
+export type SellItemBody = z.infer<typeof sellItemBodySchema>;

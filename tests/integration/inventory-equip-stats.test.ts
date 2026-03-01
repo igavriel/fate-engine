@@ -1,16 +1,15 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { GET as getSlots } from "@/app/api/game/slots/route";
 import { POST as createCharacter } from "@/app/api/game/character/create/route";
-import { GET as getStatus } from "@/app/api/game/status/route";
+import { GET as getInventory } from "@/app/api/game/inventory/route";
+import { POST as postEquip } from "@/app/api/game/equip/route";
+import { POST as postUse } from "@/app/api/game/use/route";
+import { POST as postSell } from "@/app/api/game/sell/route";
 import { prismaTest } from "@/server/db/prismaTest";
-import {
-  getInventory,
-  equipItem,
-  usePotionItem,
-  sellItemFromInventory,
-} from "@/server/game/inventoryService";
 import { hashPassword } from "@/server/auth/password";
 import { signToken } from "@/server/auth/jwt";
+import { inventoryWithStatusResponseSchema } from "@/shared/zod/game";
+import { zApiError } from "@/shared/zod/common";
 
 const defaultTestUrl = "postgresql://localhost:5432/dummy";
 const hasRealDb =
@@ -18,10 +17,13 @@ const hasRealDb =
   process.env.DATABASE_URL !== defaultTestUrl &&
   !process.env.DATABASE_URL.includes("dummy");
 
-describe("inventory + equipment + effective stats flow", () => {
-  let userId: string;
+function authHeaders(cookie: string) {
+  return { "Content-Type": "application/json", Cookie: cookie };
+}
+
+describe("inventory + equipment + effective stats flow (via route handlers)", () => {
   let authCookie: string;
-  const slotIndex = 1 as 1 | 2 | 3;
+  const slotIndex = 1;
 
   beforeAll(async () => {
     if (!hasRealDb) return;
@@ -69,11 +71,10 @@ describe("inventory + equipment + effective stats flow", () => {
       data: { email, passwordHash },
       select: { id: true, email: true },
     });
-    userId = user.id;
     authCookie = `fe_auth=${encodeURIComponent(signToken({ sub: user.id, email: user.email }))}`;
   });
 
-  it("create run, verify starter inventory, equip weapon, verify effective stats, use potion, sell item", async () => {
+  it("create run, GET inventory validates with Zod, POST equip updates status, POST use increases hp, POST sell increases coins", async () => {
     if (!hasRealDb) return;
 
     await getSlots(
@@ -83,13 +84,23 @@ describe("inventory + equipment + effective stats flow", () => {
     const createRes = await createCharacter(
       new Request("http://localhost/api/game/character/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Cookie: authCookie },
+        headers: authHeaders(authCookie),
         body: JSON.stringify({ slotIndex, name: "Hero", species: "HUMAN" }),
       })
     );
     expect(createRes.status).toBe(200);
 
-    const inventory = await getInventory(userId, slotIndex);
+    const invRes = await getInventory(
+      new Request(`http://localhost/api/game/inventory?slotIndex=${slotIndex}`, {
+        headers: { Cookie: authCookie },
+      })
+    );
+    expect(invRes.status).toBe(200);
+    const invBody = await invRes.json();
+    const invParsed = inventoryWithStatusResponseSchema.safeParse(invBody);
+    expect(invParsed.success).toBe(true);
+    if (!invParsed.success) return;
+    const { status: statusBeforeEquip, inventory } = invParsed.data;
     expect(inventory.length).toBeGreaterThanOrEqual(3);
     const rustySword = inventory.find((i) => i.catalog.name === "Rusty Sword");
     const clothTunic = inventory.find((i) => i.catalog.name === "Cloth Tunic");
@@ -99,48 +110,82 @@ describe("inventory + equipment + effective stats flow", () => {
     expect(smallPotion).toBeDefined();
     expect(smallPotion?.quantity).toBe(2);
 
-    const statusBeforeEquip = await getStatus(
-      new Request(`http://localhost/api/game/status?slotIndex=${slotIndex}`, {
-        headers: { Cookie: authCookie },
+    const baseAttack = statusBeforeEquip.run.baseStats.attack;
+    expect(statusBeforeEquip.run.equipped.weapon).toBeNull();
+
+    const equipRes = await postEquip(
+      new Request("http://localhost/api/game/equip", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({
+          slotIndex,
+          equipmentSlot: "weapon",
+          inventoryItemId: rustySword!.id,
+        }),
       })
     );
-    expect(statusBeforeEquip.status).toBe(200);
-    const dataBefore = (await statusBeforeEquip.json()) as {
-      run: { baseStats: { attack: number }; effectiveStats: { attack: number }; hp: number };
-    };
-    const baseAttack = dataBefore.run.baseStats.attack;
+    expect(equipRes.status).toBe(200);
+    const equipBody = await equipRes.json();
+    const equipParsed = inventoryWithStatusResponseSchema.safeParse(equipBody);
+    expect(equipParsed.success).toBe(true);
+    if (!equipParsed.success) return;
+    expect(equipParsed.data.status.run.effectiveStats.attack).toBe(baseAttack + 2);
+    expect(equipParsed.data.status.run.equipped.weapon).toBe(rustySword!.id);
 
-    await equipItem(userId, slotIndex, "weapon", rustySword!.id);
-
-    const statusAfterEquip = await getStatus(
-      new Request(`http://localhost/api/game/status?slotIndex=${slotIndex}`, {
-        headers: { Cookie: authCookie },
+    const hpBeforePotion = equipParsed.data.status.run.hp;
+    const useRes = await postUse(
+      new Request("http://localhost/api/game/use", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({
+          slotIndex,
+          inventoryItemId: smallPotion!.id,
+        }),
       })
     );
-    expect(statusAfterEquip.status).toBe(200);
-    const dataAfterEquip = (await statusAfterEquip.json()) as {
-      run: { effectiveStats: { attack: number }; hp: number };
-    };
-    expect(dataAfterEquip.run.effectiveStats.attack).toBe(baseAttack + 2);
+    expect(useRes.status).toBe(200);
+    const useBody = await useRes.json();
+    const useParsed = inventoryWithStatusResponseSchema.safeParse(useBody);
+    expect(useParsed.success).toBe(true);
+    if (!useParsed.success) return;
+    expect(useParsed.data.status.run.hp).toBeGreaterThanOrEqual(hpBeforePotion);
 
-    const hpBeforePotion = dataAfterEquip.run.hp;
-    await usePotionItem(userId, slotIndex, smallPotion!.id);
-    const statusAfterPotion = await getStatus(
-      new Request(`http://localhost/api/game/status?slotIndex=${slotIndex}`, {
-        headers: { Cookie: authCookie },
+    const coinsBeforeSell = useParsed.data.status.run.coins;
+    const sellRes = await postSell(
+      new Request("http://localhost/api/game/sell", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({
+          slotIndex,
+          inventoryItemId: clothTunic!.id,
+        }),
       })
     );
-    const dataAfterPotion = (await statusAfterPotion.json()) as { run: { hp: number } };
-    expect(dataAfterPotion.run.hp).toBeGreaterThanOrEqual(hpBeforePotion);
+    expect(sellRes.status).toBe(200);
+    const sellBody = await sellRes.json();
+    const sellParsed = inventoryWithStatusResponseSchema.safeParse(sellBody);
+    expect(sellParsed.success).toBe(true);
+    if (!sellParsed.success) return;
+    expect(sellParsed.data.status.run.coins).toBe(coinsBeforeSell + 4);
+    expect(sellParsed.data.inventory.find((i) => i.id === clothTunic!.id)).toBeUndefined();
+  });
 
-    const sellResult = await sellItemFromInventory(userId, slotIndex, clothTunic!.id);
-    expect(sellResult.newCoins).toBe(4);
-    const statusAfterSell = await getStatus(
-      new Request(`http://localhost/api/game/status?slotIndex=${slotIndex}`, {
-        headers: { Cookie: authCookie },
+  it("error responses match zApiError", async () => {
+    if (!hasRealDb) return;
+    const badEquipRes = await postEquip(
+      new Request("http://localhost/api/game/equip", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({
+          slotIndex,
+          equipmentSlot: "weapon",
+          inventoryItemId: "00000000-0000-0000-0000-000000000000",
+        }),
       })
     );
-    const dataAfterSell = (await statusAfterSell.json()) as { run: { coins: number } };
-    expect(dataAfterSell.run.coins).toBe(4);
+    expect(badEquipRes.status).toBe(404);
+    const errBody = await badEquipRes.json();
+    const errParsed = zApiError.safeParse(errBody);
+    expect(errParsed.success).toBe(true);
   });
 });
