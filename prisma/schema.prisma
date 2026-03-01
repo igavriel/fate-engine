@@ -95,13 +95,22 @@ model CharacterStats {
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 }
 
+enum ItemType {
+  WEAPON
+  ARMOR
+  POTION
+}
+
 model ItemCatalog {
-  id        String   @id @default(uuid())
-  slug      String   @unique
-  name      String
-  kind      String   // WEAPON, ARMOR, CONSUMABLE, etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String   @unique
+  itemType        ItemType
+  attackBonus     Int      @default(0)
+  defenseBonus    Int      @default(0)
+  healPercent     Int      @default(25)
+  sellValueCoins  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   runInventoryItems RunInventoryItem[]
 }
@@ -112,7 +121,6 @@ model RunInventoryItem {
   itemCatalogId  String
   quantity       Int      @default(1)
   createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
 
   run            Run              @relation(fields: [runId], references: [id], onDelete: Cascade)
   itemCatalog    ItemCatalog      @relation(fields: [itemCatalogId], references: [id], onDelete: Cascade)
@@ -121,8 +129,7 @@ model RunInventoryItem {
 }
 
 model RunEquipment {
-  id                      String   @id @default(uuid())
-  runId                   String   @unique
+  runId                   String   @id
   weaponInventoryItemId   String?
   armorInventoryItemId    String?
   updatedAt               DateTime @updatedAt

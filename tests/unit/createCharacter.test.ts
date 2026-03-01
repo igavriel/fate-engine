@@ -7,6 +7,8 @@ const mockRunCreate = vi.fn();
 const mockCharacterStatsCreate = vi.fn();
 const mockRunEquipmentCreate = vi.fn();
 const mockSaveSlotUpdate = vi.fn();
+const mockItemCatalogFindMany = vi.fn();
+const mockRunInventoryItemCreate = vi.fn();
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
@@ -26,6 +28,12 @@ vi.mock("@/server/db/prisma", () => ({
     runEquipment: {
       create: (...args: unknown[]) => mockRunEquipmentCreate(...args),
     },
+    itemCatalog: {
+      findMany: (...args: unknown[]) => mockItemCatalogFindMany(...args),
+    },
+    runInventoryItem: {
+      create: (...args: unknown[]) => mockRunInventoryItemCreate(...args),
+    },
   },
 }));
 
@@ -40,6 +48,8 @@ describe("createCharacter", () => {
     mockCharacterStatsCreate.mockReset();
     mockRunEquipmentCreate.mockReset();
     mockSaveSlotUpdate.mockReset();
+    mockItemCatalogFindMany.mockReset();
+    mockRunInventoryItemCreate.mockReset();
   });
 
   it("throws SLOT_NOT_FOUND when slot does not exist", async () => {
@@ -98,6 +108,12 @@ describe("createCharacter", () => {
       coins: 0,
       lastOutcome: "NONE",
     });
+    mockItemCatalogFindMany.mockResolvedValue([
+      { id: "cat-1", name: "Rusty Sword" },
+      { id: "cat-2", name: "Cloth Tunic" },
+      { id: "cat-3", name: "Small Potion" },
+    ]);
+    mockRunInventoryItemCreate.mockResolvedValue({});
 
     const result = await createCharacter(userId, {
       slotIndex: 1,
@@ -126,6 +142,7 @@ describe("createCharacter", () => {
     expect(mockRunEquipmentCreate).toHaveBeenCalledWith({
       data: { runId: "run-1" },
     });
+    expect(mockRunInventoryItemCreate).toHaveBeenCalledTimes(3);
     expect(mockSaveSlotUpdate).toHaveBeenCalledWith({
       where: { id: slotId },
       data: { characterId: "char-1", runId: "run-1" },

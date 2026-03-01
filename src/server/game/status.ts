@@ -1,4 +1,6 @@
+import { prisma } from "@/server/db/prisma";
 import { requireRunForSlot } from "@/server/game/requireRunForSlot";
+import { computeEffectiveStats } from "@/domain/stats/computeEffectiveStats";
 import type { GameStatusResponse } from "@/shared/zod/game";
 
 export async function getGameStatus(
@@ -7,6 +9,14 @@ export async function getGameStatus(
 ): Promise<GameStatusResponse> {
   const { character: char, run } = await requireRunForSlot(userId, slotIndex);
 
+  const equipment = await prisma.runEquipment.findUnique({
+    where: { runId: run.id },
+    include: {
+      weaponInventoryItem: { include: { itemCatalog: true } },
+      armorInventoryItem: { include: { itemCatalog: true } },
+    },
+  });
+
   const baseStats = {
     attack: char.baseAttack,
     defense: char.baseDefense,
@@ -14,8 +24,13 @@ export async function getGameStatus(
     hpMax: char.baseHpMax,
   };
 
-  // Phase 1A: effectiveStats = baseStats; no equipment
-  const effectiveStats = { ...baseStats };
+  const weaponBonus = equipment?.weaponInventoryItem?.itemCatalog
+    ? { attackBonus: equipment.weaponInventoryItem.itemCatalog.attackBonus }
+    : null;
+  const armorBonus = equipment?.armorInventoryItem?.itemCatalog
+    ? { defenseBonus: equipment.armorInventoryItem.itemCatalog.defenseBonus }
+    : null;
+  const effectiveStats = computeEffectiveStats(baseStats, weaponBonus, armorBonus);
 
   return {
     slotIndex,
@@ -30,8 +45,8 @@ export async function getGameStatus(
       baseStats,
       effectiveStats,
       equipped: {
-        weapon: null,
-        armor: null,
+        weapon: equipment?.weaponInventoryItemId ?? null,
+        armor: equipment?.armorInventoryItemId ?? null,
       },
       lastOutcome: run.lastOutcome,
     },

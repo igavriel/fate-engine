@@ -2,14 +2,29 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getGameStatus } from "@/server/game/status";
 
 const mockRequireRunForSlot = vi.fn();
+const mockRunEquipmentFindUnique = vi.fn();
 
 vi.mock("@/server/game/requireRunForSlot", () => ({
   requireRunForSlot: (...args: unknown[]) => mockRequireRunForSlot(...args),
 }));
 
+vi.mock("@/server/db/prisma", () => ({
+  prisma: {
+    runEquipment: {
+      findUnique: (...args: unknown[]) => mockRunEquipmentFindUnique(...args),
+    },
+  },
+}));
+
 describe("getGameStatus", () => {
   beforeEach(() => {
     mockRequireRunForSlot.mockReset();
+    mockRunEquipmentFindUnique.mockReset();
+    mockRunEquipmentFindUnique.mockResolvedValue({
+      runId: "run-1",
+      weaponInventoryItemId: null,
+      armorInventoryItemId: null,
+    });
   });
 
   it("returns game status with run and base stats", async () => {
