@@ -1,5 +1,5 @@
 ---
-description: Fate Engine project conventions (Phase 1A)
+description: Fate Engine project conventions
 globs: 
 alwaysApply: true
 ---
@@ -15,4 +15,4 @@ alwaysApply: true
 - **Env:** Validate with Zod in `src/server/env/env.ts`. Never commit `.env`; use `.env.example` / `.env.test.example`.
 - **Logging:** pino via `src/server/log/logger.ts`; use `withTraceId()` for request tracing.
 - **Tests:** Vitest for unit/integration (`tests/`), Playwright for e2e (`e2e/`).
-- **DB:** Prisma migrations in `prisma/migrations/`. Run `vercel-build` on main for production deploys.
+- **DB:** Prisma 7 — connection URL in `prisma.config.ts` (CLI); runtime uses `@prisma/adapter-pg` in `src/server/db/prisma.ts`. Migrations in `prisma/migrations/`. Run `pnpm db:generate` after schema changes; `vercel-build` on main for production deploys.

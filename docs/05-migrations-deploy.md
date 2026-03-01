@@ -1,9 +1,14 @@
 # Migrations and Deploy
 
+## Prisma 7 setup
+
+- **Connection URL** is not in `schema.prisma`; it lives in **`prisma.config.ts`** via `env("DATABASE_URL")`. The config loads `.env` with `import "dotenv/config"`.
+- **Generate** is separate from migrate: run `pnpm db:generate` after schema changes or after a fresh clone. Prisma 7 does not run generate automatically during `migrate dev`.
+
 ## Local
 
-- **Develop (interactive):** `pnpm db:migrate:dev` — applies migrations and updates Prisma Client. Use with local Postgres or Neon URL in `.env`.
-- **Generate client only:** `pnpm db:generate`
+- **Develop (interactive):** `pnpm db:migrate:dev` — applies migrations (uses `prisma.config.ts`). Use with local Postgres or Neon URL in `.env`.
+- **Generate client:** `pnpm db:generate` — run after migrations or schema changes.
 
 ## Vercel (production)
 
@@ -24,6 +29,6 @@ Copy the `DATABASE_URL` from Vercel (or Neon dashboard) into your local `.env`. 
 
 See README for full verification steps.
 
-## Phase 1A models
+## Models
 
-Migrations include: SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment. See `prisma/schema.prisma`.
+Migrations include: AppConfig, User, SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment. See `prisma/schema.prisma`.

@@ -1,6 +1,6 @@
 # Fate Engine
 
-Web RPG — Next.js App Router + Tailwind + TypeScript + Prisma (Postgres) + pnpm. Phase 1A: slots, character creation, Game Hub (read-only).
+Web RPG — Next.js App Router + Tailwind + TypeScript + Prisma 7 (Postgres) + pnpm. Slots, character creation, Game Hub, combat, inventory, and run lifecycle.
 
 ## Setup
 
@@ -18,31 +18,31 @@ Web RPG — Next.js App Router + Tailwind + TypeScript + Prisma (Postgres) + pnp
    To test locally against the **same DB as the deployed Vercel app**, copy the `DATABASE_URL` from your Vercel project (or Neon dashboard) into `.env`. Then run migrations and the app locally; `pnpm db:check` will update the same DB.
 
 3. **Database**
+   - **Prisma 7** uses `prisma.config.ts` for the CLI (migrate, generate). The schema no longer contains `url`; the connection URL is in `prisma.config.ts` (via `env("DATABASE_URL")`) and loaded from `.env` via `dotenv`.
+   - Runtime uses `@prisma/adapter-pg` with `pg`; the client is created in `src/server/db/prisma.ts` with the adapter.
 
    ```bash
-   pnpm db:migrate:dev
+   pnpm db:migrate:dev   # apply migrations (uses prisma.config.ts)
+   pnpm db:generate      # generate Prisma client (required after schema changes in Prisma 7)
    ```
-
-   This creates/updates tables and generates the Prisma client.
 
 ## Scripts
 
-| Script                   | Description                                     |
-| ------------------------ | ----------------------------------------------- |
-| `pnpm dev`               | Start dev server                                |
-| `pnpm build`             | Production build                                |
-| `pnpm start`             | Start production server                         |
-| `pnpm lint`              | Run ESLint                                      |
-| `pnpm db:generate`       | Generate Prisma client                          |
-| `pnpm db:migrate:dev`    | Apply migrations (dev)                          |
-| `pnpm db:migrate:deploy` | Apply migrations (CI/production)                |
-| `pnpm vercel-build`      | Used by Vercel: migrate + generate + next build |
-| `pnpm test`              | Vitest (unit + integration) with coverage       |
-| `pnpm test:watch`        | Vitest watch mode                               |
-| `pnpm e2e`               | Playwright e2e (starts dev server)              |
-| `pnpm env:dev`           | Run next command with `.env`                    |
-| `pnpm env:test`          | Run next command with `.env.test`               |
-| `pnpm db:check`          | CLI: connect to DB and upsert `last_db_check`   |
+| Script                   | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `pnpm dev`               | Start dev server                                 |
+| `pnpm build`             | Production build                                 |
+| `pnpm start`             | Start production server                           |
+| `pnpm lint`              | Run ESLint                                       |
+| `pnpm db:generate`       | Generate Prisma client (run after schema changes) |
+| `pnpm db:migrate:dev`    | Apply migrations (dev)                            |
+| `pnpm db:migrate:deploy` | Apply migrations (CI/production)                  |
+| `pnpm db:check`          | CLI: connect to DB and upsert `last_db_check`    |
+| `pnpm db:seed`           | Run Prisma seed script                            |
+| `pnpm vercel-build`      | Used by Vercel: migrate + generate + next build  |
+| `pnpm test`              | Vitest (unit + integration) with coverage        |
+| `pnpm test:watch`        | Vitest watch mode                                 |
+| `pnpm e2e`               | Playwright e2e (starts dev server)                |
 
 ## Local verification against Vercel DB
 
@@ -54,8 +54,9 @@ To confirm local dev uses the same Postgres as the deployed app:
 
    ```bash
    pnpm db:migrate:dev   # ensure schema is up to date
-   pnpm db:check        # upsert last_db_check in that DB
-   pnpm dev             # start app; hit /api/db-check to see same DB
+   pnpm db:generate      # generate Prisma client (Prisma 7)
+   pnpm db:check         # upsert last_db_check in that DB
+   pnpm dev              # start app; hit /api/db-check to see same DB
    ```
 
 4. Open `/api/health` and `/api/db-check` in the browser; both should succeed. For Phase 1A: log in, go to Slots, create a character in a slot, then open the Game Hub and confirm status bar and 3 enemy cards (Weak/Normal/Tough) appear.
@@ -70,13 +71,11 @@ To confirm local dev uses the same Postgres as the deployed app:
 
 1. **Install:** `pnpm install`
 2. **Env:** `cp .env.example .env` and set `DATABASE_URL` (Neon/Vercel Postgres) and `JWT_SECRET`
-3. **Migrations:** `pnpm db:migrate:dev` (creates tables; use a real Postgres URL for full checks)
+3. **Migrations:** `pnpm db:migrate:dev` then `pnpm db:generate` (Prisma 7: generate is separate)
 4. **Dev server:** `pnpm dev` — open `/api/health` and `/api/db-check` (both return OK when DB is connected)
-5. **Tests:** `pnpm test` — unit and integration tests pass (integration test accepts 200 or 500 when no real DB)
-6. **E2E:** `pnpm e2e` — Playwright smoke test passes (login page renders)
+5. **Tests:** `pnpm test` — unit and integration tests pass (integration tests may need real `DATABASE_URL` for full DB checks)
+6. **E2E:** `pnpm e2e` — Playwright tests (login, flows)
 7. **Build & lint:** `pnpm build` and `pnpm lint` — no errors
-
-TypeScript builds, lint passes, and tests pass. For the integration test to assert DB connected, use a real `DATABASE_URL` in `.env` or `.env.test`.
 
 ## Phase 0 (done)
 
@@ -87,15 +86,16 @@ TypeScript builds, lint passes, and tests pass. For the integration test to asse
 - Pino logging, Zod env validation
 - Vitest + Playwright + one smoke e2e
 
-## Phase 1A (current)
+## Phase 1A + 1B/1C (current)
 
-- **Flow:** Login → Slot Selection → Character Creation → Game Hub (read-only).
-- **API:** GET/POST game/slots, POST game/character/create, GET game/status, GET game/enemies (all require auth). Zod DTOs for request/response.
+- **Flow:** Login → Slot Selection → Character Creation → Game Hub → Combat, inventory, run end.
+- **API:** Slots, character/create, status, enemies, encounter/start, combat, action, summary, summary/ack, run/end, inventory, equip, unequip, sell, use (all under `/api/game/*` with auth). Zod DTOs throughout.
 - **DB:** SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment (see `prisma/schema.prisma`).
-- **Domain:** Deterministic RNG (Mulberry32), enemy generation (seed + fightCounter, tiers WEAK/NORMAL/TOUGH).
-- **UI:** `/slots`, `/create?slotIndex=#`, `/game?slotIndex=#` with status bar and 3 enemy cards. No combat or inventory actions yet (Phase 1B/1C).
+- **Domain:** Deterministic RNG (Mulberry32), enemy generation, combat resolution, loot, progression (see `src/domain/`).
+- **UI:** `/slots`, `/create?slotIndex=#`, `/game?slotIndex=#` with status, enemies, combat, inventory, and run end.
 
-## Phase 1C1 (Backend combat)
+## Phase 1C1 (Backend combat) — done
 
-- **API:** POST encounter/start, GET combat, POST action (ATTACK/HEAL/RETREAT), GET summary, POST summary/ack. Combat state in `Run.stateJson`; deterministic outcomes from seed + turnCounter/fightCounter.
-- **Domain:** `src/domain/combat/`, `src/domain/progression/`, `src/domain/loot/`. Unit tests for these modules; integration test `tests/integration/combat-flow.test.ts` covers full flow when `DATABASE_URL` is set. Target: new domain code has ≥90% line coverage (run `pnpm test` and check coverage report for `src/domain/combat`, `src/domain/progression`, `src/domain/loot`).
+- **API:** POST encounter/start, GET combat, POST action (ATTACK/HEAL/RETREAT), GET summary, POST summary/ack, POST run/end. Combat state in `Run.stateJson`; deterministic outcomes from seed + turnCounter/fightCounter.
+- **Domain:** `src/domain/combat/`, `src/domain/progression/`, `src/domain/loot/`. Unit and integration tests; `tests/integration/combat-flow.test.ts` and `run-lifecycle.test.ts` cover flow when `DATABASE_URL` is set.
+- **Inventory/shop:** GET inventory, POST equip/unequip, POST sell, POST use (potion); item catalog and run inventory in Prisma.

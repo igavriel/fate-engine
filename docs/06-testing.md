@@ -7,16 +7,18 @@
 
 Tests live under `tests/`:
 
-- `tests/unit/` — env, logger, RNG determinism, enemy generation determinism.
-- `tests/integration/` — API route handlers (db-check, game/slots, character/create, status, enemies). Tests call route handlers with mocked Request; integration tests that need DB use the main Postgres client and require a real `DATABASE_URL`.
+- `tests/unit/` — env, logger, RNG determinism, enemy generation, domain (combat, progression, loot).
+- `tests/integration/` — API route handlers (db-check, game/slots, character/create, status, enemies, combat flow, run lifecycle). Tests call route handlers with mocked Request; tests that need DB use the test Prisma client (`prismaTest`) and require a real `DATABASE_URL` (or `DATABASE_URL_TEST`).
 
-Env for tests: use `.env.test` or set vars in CI. `tests/setup.ts` sets defaults for missing `DATABASE_URL` and `JWT_SECRET` so unit tests can run without a real DB; integration tests that create data require a real Postgres URL.
+Env for tests: set `DATABASE_URL` (and optionally `DATABASE_URL_TEST`) in `.env.test` or in CI. `tests/setup.ts` sets fallbacks for missing `DATABASE_URL` and `JWT_SECRET` so unit tests can run; integration tests that hit the DB need a real Postgres URL.
 
 ## E2E (Playwright)
 
 - **Run:** `pnpm e2e`
 - **With UI:** `pnpm exec playwright test --ui`
 
-Playwright starts the dev server (`pnpm dev`) unless `reuseExistingServer` is used. E2E specs are in `e2e/` (e.g. `smoke.spec.ts`).
+Playwright starts the dev server unless `reuseExistingServer` is used. E2E specs are in `e2e/` (e.g. login, flows).
 
-Phase 0: one smoke test that the login page renders. Phase 1A: login → slots → create character → hub (optional e2e).
+## Prisma 7 and tests
+
+The test client uses `@prisma/adapter-pg` in `src/server/db/prismaTest.ts` with `DATABASE_URL_TEST ?? DATABASE_URL`. Ensure `pnpm db:generate` has been run so the generated client exists.

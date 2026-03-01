@@ -1,6 +1,6 @@
 # API Contract
 
-Phase 1A endpoints only. All `/api/game/*` routes require authentication (JWT cookie `fe_auth`).
+All `/api/game/*` routes require authentication (JWT cookie `fe_auth`). Includes Phase 1A (slots, character, status, enemies), Phase 1C (combat, summary, run/end), and inventory (equip, unequip, sell, use).
 
 ---
 
@@ -199,6 +199,16 @@ Clears the pending combat summary so the player can start a new encounter.
 - `status`: same as GET /api/game/status (run will have `status: "OVER"`)
 
 Marks the current run as over (`run.status = "OVER"`). SaveSlot.runId is kept so the hub can still fetch status and show "run over". Losses are only incremented on combat DEFEAT, not when ending via this endpoint. Idempotent: calling multiple times just returns the same status.
+
+---
+
+## Inventory
+
+- **GET /api/game/inventory** — query `slotIndex`. Returns `status` (same as GET status) and `inventory` (run inventory items).
+- **POST /api/game/equip** — body: `slotIndex`, `equipmentSlot` (WEAPON | ARMOR), `inventoryItemId`. Equips item.
+- **POST /api/game/unequip** — body: `slotIndex`, `equipmentSlot`. Unequips.
+- **POST /api/game/sell** — body: `slotIndex`, `inventoryItemId`. Sells item for coins.
+- **POST /api/game/use** — body: `slotIndex`, `inventoryItemId`. Uses potion (heal).
 
 ---
 
