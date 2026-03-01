@@ -1,0 +1,16 @@
+---
+description: Fate Engine project conventions (Phase 0)
+globs: 
+alwaysApply: true
+---
+
+# Fate Engine — Project Rules
+
+- **Stack:** Next.js App Router, Tailwind, TypeScript, Prisma (Postgres), pnpm.
+- **API:** Route Handlers under `app/api/**`. Use `src/server/http/respond.ts` for JSON responses.
+- **Server code:** `src/server/` — db, log, env, auth, http. Use `@/server/*` path alias.
+- **Auth (Phase 0):** JWT in httpOnly cookie `fe_auth`. bcrypt for passwords. Skeleton endpoints only.
+- **Env:** Validate with Zod in `src/server/env/env.ts`. Never commit `.env`; use `.env.example` / `.env.test.example`.
+- **Logging:** pino via `src/server/log/logger.ts`; use `withTraceId()` for request tracing.
+- **Tests:** Vitest for unit/integration (`tests/`), Playwright for e2e (`e2e/`). One smoke e2e for Phase 0.
+- **DB:** Prisma migrations in `prisma/migrations/`. Run `vercel-build` on main for production deploys.
