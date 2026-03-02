@@ -11,20 +11,20 @@ test.describe("Game (Hub)", () => {
     page,
   }) => {
     await registerAndLogin(page, randomEmail());
-    await page.getByRole("link", { name: /new game/i }).first().click();
+    await page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i }).click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("Hub Hero");
-    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
-    // Wait for hub to finish loading (status + enemies + inventory fetched)
-    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({ timeout: 1000 });
+    await expect(page.getByTestId("btn-confront").first()).toBeVisible({ timeout: 1000 });
 
-    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
-    await expect(page.getByText(/status|hp|coins|level/i).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: /enemies/i })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /inventory/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible();
+    await expect(page.getByTestId("page-game")).toBeVisible();
+    await expect(page.getByText("Pick your prey.")).toBeVisible();
+    await expect(page.getByText(/vitality|ash|rank/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /omens?/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /relics/i })).toBeVisible();
+    await expect(page.getByTestId("btn-confront").first()).toBeVisible();
   });
 
   test("invalid slotIndex shows error", async ({ page }) => {
@@ -54,18 +54,18 @@ test.describe("Game (Hub)", () => {
     ];
 
     await registerAndLogin(page, randomEmail());
-    await page.getByRole("link", { name: /new game/i }).first().click();
+    await page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i }).click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("Enemy Card Hero");
-    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
-    await expect(page.getByTestId("enemy-card-0")).toBeVisible({ timeout: 1000 });
-    await expect(page.getByTestId("enemy-card-1")).toBeVisible();
-    await expect(page.getByTestId("enemy-card-2")).toBeVisible();
+    await expect(page.getByTestId("omen-card-0")).toBeVisible({ timeout: 1000 });
+    await expect(page.getByTestId("omen-card-1")).toBeVisible();
+    await expect(page.getByTestId("omen-card-2")).toBeVisible();
 
     for (let i = 0; i < 3; i++) {
-      const card = page.getByTestId(`enemy-card-${i}`);
+      const card = page.getByTestId(`omen-card-${i}`);
       const tier = card.getByTestId("enemy-tier");
       const name = card.getByTestId("enemy-name");
       const species = card.getByTestId("enemy-species");
@@ -88,21 +88,21 @@ test.describe("Game (Hub)", () => {
     page,
   }) => {
     await registerAndLogin(page, randomEmail());
-    await page.getByRole("link", { name: /new game/i }).first().click();
+    await page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i }).click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("Fight Win Hero");
-    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
-    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({ timeout: 1000 });
-    await page.getByRole("button", { name: /fight/i }).first().click();
+    await expect(page.getByTestId("btn-confront").first()).toBeVisible({ timeout: 1000 });
+    await page.getByTestId("btn-confront").first().click();
     await expect(page).toHaveURL(/\/combat\?slotIndex=1/, { timeout: 2000 });
 
     let outcome: string | null = null;
     for (let i = 0; i < 50; i++) {
-      await page.getByRole("button", { name: /attack/i }).click();
+      await page.getByTestId("btn-strike").click();
       await page.waitForTimeout(300);
-      const summary = page.getByTestId("summary-modal");
+      const summary = page.getByTestId("aftermath-modal");
       if (await summary.isVisible()) {
         outcome = await page.getByTestId("summary-title").textContent();
         break;
@@ -110,7 +110,7 @@ test.describe("Game (Hub)", () => {
     }
     expect(outcome).toBeTruthy();
 
-    const summaryModal = page.getByTestId("summary-modal");
+    const summaryModal = page.getByTestId("aftermath-modal");
     await expect(summaryModal).toBeVisible({ timeout: 2000 });
     const lootSection = page.getByTestId("summary-loot");
     await expect(lootSection).toBeVisible();
@@ -121,7 +121,7 @@ test.describe("Game (Hub)", () => {
     await page.getByRole("button", { name: /continue/i }).click();
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 2000 });
 
-    await expect(page.getByRole("heading", { name: /inventory/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /relics/i })).toBeVisible();
     const requiredLevelInInventory = page.getByTestId("item-required-level").first();
     await expect(requiredLevelInInventory).toBeVisible({ timeout: 2000 });
   });

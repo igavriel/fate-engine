@@ -1,6 +1,8 @@
 "use client";
 
 import type { SummaryResponse } from "@/shared/zod/game";
+import { screenCopy, actionLabels, labels } from "@/src/ui/theme/copy";
+import { buttonPrimary } from "@/src/ui/theme/classnames";
 
 type SummaryModalProps = {
   summary: SummaryResponse;
@@ -16,7 +18,11 @@ export function SummaryModal({
   ackError = null,
 }: SummaryModalProps) {
   const outcomeLabel =
-    summary.outcome === "WIN" ? "Victory!" : summary.outcome === "RETREAT" ? "Retreat" : "Defeat";
+    summary.outcome === "WIN"
+      ? screenCopy.aftermathWin
+      : summary.outcome === "RETREAT"
+        ? screenCopy.aftermathRetreat
+        : screenCopy.aftermathDefeat;
 
   const outcomeColor =
     summary.outcome === "WIN"
@@ -31,24 +37,27 @@ export function SummaryModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="summary-title"
-      data-testid="summary-modal"
+      data-testid="aftermath-modal"
     >
       <div className="w-full max-w-md rounded-lg border border-zinc-600 bg-zinc-900 p-6 shadow-xl">
-        <h2 id="summary-title" data-testid="summary-title" className={`text-xl font-bold ${outcomeColor}`}>
-          {outcomeLabel}
+        <h2 id="summary-title" className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
+          {screenCopy.aftermathTitle}
         </h2>
+        <p data-testid="summary-title" className={`mt-1 text-xl font-bold ${outcomeColor}`}>
+          {outcomeLabel}
+        </p>
         <p className="mt-1 text-sm text-zinc-400">
           vs {summary.enemy.name} ({summary.enemy.species}) · Lv.{summary.enemy.level}
         </p>
 
         <div className="mt-4 space-y-2 rounded border border-zinc-700 bg-zinc-800/50 p-3 text-sm">
           <p className="text-zinc-300">
-            HP: {summary.delta.hpChange >= 0 ? "+" : ""}
+            {labels.HP}: {summary.delta.hpChange >= 0 ? "+" : ""}
             {summary.delta.hpChange}
           </p>
           <p className="text-zinc-300">XP: +{summary.delta.xpGained}</p>
           <p className="text-zinc-300">
-            Coins: {summary.delta.coinsGained >= 0 ? "+" : ""}
+            {labels.Coins}: {summary.delta.coinsGained >= 0 ? "+" : ""}
             {summary.delta.coinsGained}
           </p>
         </div>
@@ -82,7 +91,7 @@ export function SummaryModal({
         </div>
 
         {summary.leveledUp && summary.newLevel != null && (
-          <p className="mt-4 text-amber-400">Level up! You are now level {summary.newLevel}.</p>
+          <p className="mt-4 text-amber-400">{labels.Level} up! You are now {labels.Level.toLowerCase()} {summary.newLevel}.</p>
         )}
 
         {ackError && <p className="mt-4 text-sm text-red-400">{ackError}</p>}
@@ -92,9 +101,9 @@ export function SummaryModal({
             type="button"
             onClick={onContinue}
             disabled={ackPending}
-            className="rounded bg-zinc-600 px-4 py-2 font-medium text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
+            className={`min-h-[44px] ${buttonPrimary()} bg-zinc-600 hover:bg-zinc-500`}
           >
-            {ackPending ? "..." : "Continue"}
+            {ackPending ? "…" : actionLabels.continue}
           </button>
         </div>
       </div>

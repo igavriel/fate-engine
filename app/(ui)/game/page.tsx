@@ -7,6 +7,9 @@ import type { InventoryItem, RunStatus } from "@/shared/zod/game";
 import type { SummaryResponse } from "@/shared/zod/game";
 import { SummaryModal } from "@/components/SummaryModal";
 import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
+import { labels, screenCopy, actionLabels } from "@/src/ui/theme/copy";
+import { panel, card, buttonPrimary, buttonGhost, badgeTier } from "@/src/ui/theme/classnames";
+import type { BadgeTier } from "@/src/ui/theme/classnames";
 
 type GameStatus = { slotIndex: number; run: RunStatus };
 
@@ -250,8 +253,8 @@ function GamePageInner() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-red-400">Invalid slot.</p>
-        <Link href="/slots" className="mt-4 inline-block text-sm text-zinc-400 hover:text-zinc-200">
-          ← Back to slots
+        <Link href="/slots" className="mt-4 inline-block text-sm text-zinc-400 hover:text-zinc-200 min-h-[44px] flex items-center">
+          {actionLabels.backToSlots}
         </Link>
       </div>
     );
@@ -274,8 +277,8 @@ function GamePageInner() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-red-400">{error ?? "Failed to load game"}</p>
-        <Link href="/slots" className="mt-4 inline-block text-sm text-zinc-400 hover:text-zinc-200">
-          ← Back to slots
+        <Link href="/slots" className="mt-4 inline-block text-sm text-zinc-400 hover:text-zinc-200 min-h-[44px] flex items-center">
+          {actionLabels.backToSlots}
         </Link>
       </div>
     );
@@ -290,7 +293,7 @@ function GamePageInner() {
     process.env.NEXT_PUBLIC_DEBUG === "true";
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8" data-testid="page-game">
       {debugOn && status && (
         <div className="mb-4 rounded border border-zinc-600 bg-zinc-900 px-3 py-2 font-mono text-xs text-zinc-500">
           Debug: slotIndex={status.slotIndex} runSeed={status.run.seed}
@@ -309,7 +312,7 @@ function GamePageInner() {
             href={`/combat?slotIndex=${slotNum}`}
             className="rounded bg-amber-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
           >
-            Go to Combat
+            {actionLabels.goToCombat}
           </Link>
         </div>
       )}
@@ -326,24 +329,24 @@ function GamePageInner() {
             href="/slots"
             className="mt-3 inline-block rounded bg-zinc-600 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-500"
           >
-            Back to Slots
+            {actionLabels.backToSlots}
           </Link>
         </div>
       )}
 
-      <h1 className="text-2xl font-bold text-zinc-100">Game Hub</h1>
-      <p className="text-zinc-400">Slot {status.slotIndex}</p>
+      <h1 className="text-2xl font-bold text-zinc-100">{screenCopy.hub}</h1>
+      <p className="text-zinc-400">{labels.Slot} {status.slotIndex}</p>
 
-      {/* Status bar */}
-      <div className="mt-6 rounded-lg border border-zinc-700 bg-zinc-900 p-4">
-        <h2 className="text-sm font-medium text-zinc-400">Status</h2>
+      {/* Status bar: Vitality / Rank / Ash */}
+      <div className={`mt-6 ${panel()}`}>
+        <h2 className="text-sm font-medium text-zinc-400">{labels.Slot}</h2>
         <div className="mt-2 flex flex-wrap gap-6">
           <span className="text-zinc-200">
-            HP: {run.hp} / {run.hpMax}
+            {labels.HP}: {run.hp} / {run.hpMax}
           </span>
-          <span className="text-zinc-200">Coins: {run.coins}</span>
+          <span className="text-zinc-200">{labels.Coins}: {run.coins}</span>
           <span className="text-zinc-200">
-            Level {run.level} (XP: {run.xp})
+            {labels.Level} {run.level} (XP: {run.xp})
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-sm text-zinc-500">
@@ -354,39 +357,41 @@ function GamePageInner() {
         </div>
       </div>
 
-      {/* Enemy cards */}
+      {/* Omen cards */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-zinc-200">Enemies</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <h2 className="text-lg font-semibold text-zinc-200">{labels.Enemy}s</h2>
+        <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-3">
           {enemies?.map((e, index) => (
             <div
               key={e.choiceId}
-              data-testid={`enemy-card-${index}`}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+              data-testid={`omen-card-${index}`}
+              className={card()}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-400" data-testid="enemy-tier">
+                <span className={badgeTier((e.tier as BadgeTier) ?? "NORMAL")} data-testid="enemy-tier">
                   {e.tier}
                 </span>
                 <span className="text-xs text-zinc-500">Lv.{e.level}</span>
               </div>
-              <p className="mt-2 font-medium text-zinc-100" data-testid="enemy-name">
+              <p className="mt-2 text-xs font-medium text-amber-500/90 uppercase">{labels.Enemy}</p>
+              <p className="mt-1 font-medium text-zinc-100" data-testid="enemy-name">
                 {e.name}
               </p>
               <p className="text-sm text-zinc-500" data-testid="enemy-species">
                 {e.species}
               </p>
               <p className="mt-2 text-xs text-zinc-500">
-                Loot: {e.preview.estimatedLootCoinsMin}–{e.preview.estimatedLootCoinsMax} coins
+                Loot: {e.preview.estimatedLootCoinsMin}–{e.preview.estimatedLootCoinsMax} {labels.Coins.toLowerCase()}
               </p>
               <div className="mt-3">
                 <button
                   type="button"
                   disabled={!!summary || fightPending !== null}
                   onClick={() => handleStartEncounter(e.choiceId)}
-                  className="w-full rounded bg-red-700 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                  className={`w-full min-h-[44px] ${buttonPrimary()} bg-red-700 hover:bg-red-600`}
+                  data-testid="btn-confront"
                 >
-                  {fightPending === e.choiceId ? "..." : "Fight"}
+                  {fightPending === e.choiceId ? "…" : actionLabels.confront}
                 </button>
               </div>
             </div>
@@ -394,9 +399,9 @@ function GamePageInner() {
         </div>
       </div>
 
-      {/* Inventory panel */}
+      {/* Relics panel */}
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-zinc-200">Inventory</h2>
+        <h2 className="text-lg font-semibold text-zinc-200">{labels.Inventory}</h2>
         {inventory.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500">No items.</p>
         ) : (
@@ -445,7 +450,7 @@ function GamePageInner() {
                           </span>
                         )}
                         <span>×{item.quantity}</span>
-                        <span>Sell: {item.catalog.sellValueCoins * item.quantity} coins</span>
+                        <span>Sell: {item.catalog.sellValueCoins * item.quantity} {labels.Coins.toLowerCase()}</span>
                       </div>
                       {isEquipped && (
                         <p className="mt-1 text-xs text-amber-400">
@@ -476,9 +481,9 @@ function GamePageInner() {
                                       item.catalog.itemType === "WEAPON" ? "weapon" : "armor"
                                     )
                                   }
-                                  className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
+                                  className={`min-h-[44px] min-w-[44px] ${buttonGhost()} text-sm`}
                                 >
-                                  {belowLevel ? `Equip (Lv.${reqLevel})` : "Equip"}
+                                  {belowLevel ? `Equip (Lv.${reqLevel})` : actionLabels.equip}
                                 </button>
                               );
                             })()
@@ -487,9 +492,9 @@ function GamePageInner() {
                               type="button"
                               disabled={pending}
                               onClick={() => handleUnequip(isEquippedWeapon ? "weapon" : "armor")}
-                              className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
+                              className={`min-h-[44px] min-w-[44px] ${buttonGhost()} text-sm`}
                             >
-                              Unequip
+                              {actionLabels.unequip}
                             </button>
                           )}
                         </>
@@ -499,9 +504,9 @@ function GamePageInner() {
                           type="button"
                           disabled={pending}
                           onClick={() => handleUse(item.id)}
-                          className="rounded bg-emerald-700 px-3 py-1.5 text-sm text-white hover:bg-emerald-600 disabled:opacity-50"
+                          className={`min-h-[44px] min-w-[44px] rounded-lg bg-emerald-700 px-3 py-1.5 text-sm text-white hover:bg-emerald-600 disabled:opacity-50`}
                         >
-                          Use
+                          {actionLabels.use}
                         </button>
                       )}
                       {!isEquipped && (
@@ -509,9 +514,9 @@ function GamePageInner() {
                           type="button"
                           disabled={pending}
                           onClick={() => handleSell(item.id)}
-                          className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
+                          className={`min-h-[44px] min-w-[44px] ${buttonGhost()} text-sm`}
                         >
-                          Sell
+                          {actionLabels.sell}
                         </button>
                       )}
                     </div>
@@ -542,8 +547,8 @@ function GamePageInner() {
         )}
       </div>
 
-      <Link href="/slots" className="mt-8 inline-block text-sm text-zinc-500 hover:text-zinc-300">
-        ← Back to slots
+      <Link href="/slots" className="mt-8 inline-block text-sm text-zinc-500 hover:text-zinc-300 min-h-[44px] flex items-center">
+        {actionLabels.backToSlots}
       </Link>
 
       {summary && (

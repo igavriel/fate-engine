@@ -9,10 +9,10 @@ test.describe("Combat", () => {
 
   test("combat page with no active encounter redirects to hub", async ({ page }) => {
     await registerAndLogin(page, randomEmail());
-    await page.getByRole("link", { name: /new game/i }).first().click();
+    await page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i }).click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("Combat Hero");
-    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
     await page.goto("/combat?slotIndex=1");

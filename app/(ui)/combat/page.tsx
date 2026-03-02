@@ -5,6 +5,8 @@ import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import type { CombatStateResponse } from "@/shared/zod/game";
 import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
+import { labels, screenCopy, actionLabels } from "@/src/ui/theme/copy";
+import { panel, buttonPrimary, buttonGhost } from "@/src/ui/theme/classnames";
 
 type ApiError = { error: { code: string; message: string } };
 
@@ -139,34 +141,34 @@ function CombatPageInner() {
   const logEntries = combat.log.slice(-LOG_MAX);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-zinc-100">Combat</h1>
-      <p className="text-zinc-400">Slot {combat.slotIndex}</p>
+    <div className="mx-auto max-w-2xl px-4 py-8" data-testid="page-combat">
+      <h1 className="text-2xl font-bold text-zinc-100">{screenCopy.combat}</h1>
+      <p className="text-zinc-400">{labels.Slot} {combat.slotIndex}</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
-          <h2 className="text-sm font-medium text-zinc-400">You</h2>
+        <div className={panel()}>
+          <h2 className="text-sm font-medium text-zinc-400">{labels.Slot}</h2>
           <p className="mt-2 text-zinc-200">
-            HP: {combat.player.hp} / {combat.player.hpMax}
+            {labels.HP}: {combat.player.hp} / {combat.player.hpMax}
           </p>
           <p className="mt-1 text-sm text-zinc-500">
             ATK {combat.player.effectiveAttack} · DEF {combat.player.effectiveDefense} · Luck{" "}
             {combat.player.luck}
           </p>
         </div>
-        <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
-          <h2 className="text-sm font-medium text-zinc-400">Enemy</h2>
+        <div className={panel()}>
+          <h2 className="text-sm font-medium text-amber-500/90 uppercase">THE {labels.Enemy.toUpperCase()}</h2>
           <p className="mt-2 font-medium text-zinc-200">
             {combat.enemy.name} ({combat.enemy.species})
           </p>
           <p className="text-sm text-zinc-500">
-            Lv.{combat.enemy.level} · HP: {combat.enemy.hp} / {combat.enemy.hpMax}
+            Lv.{combat.enemy.level} · {labels.HP}: {combat.enemy.hp} / {combat.enemy.hpMax}
           </p>
         </div>
       </div>
 
       <div className="mt-6">
-        <h2 className="text-sm font-medium text-zinc-400">Combat log</h2>
+        <h2 className="text-sm font-medium text-zinc-400">{labels.Log}</h2>
         <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-zinc-300">
           {logEntries.length === 0 ? (
             <p className="text-zinc-500">—</p>
@@ -187,33 +189,36 @@ function CombatPageInner() {
           type="button"
           disabled={actionPending}
           onClick={() => handleAction("ATTACK")}
-          className="rounded bg-red-700 px-4 py-2 font-medium text-white hover:bg-red-600 disabled:opacity-50"
+          className={`min-h-[44px] min-w-[44px] ${buttonPrimary()} bg-red-700 hover:bg-red-600`}
+          data-testid="btn-strike"
         >
-          Attack
+          {actionLabels.strike}
         </button>
         <button
           type="button"
           disabled={actionPending || !combat.canHeal}
           onClick={() => handleAction("HEAL")}
-          className="rounded bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+          className={`min-h-[44px] min-w-[44px] ${buttonPrimary()} bg-emerald-700 hover:bg-emerald-600`}
+          data-testid="btn-mend"
         >
-          Heal
+          {actionLabels.mend}
         </button>
         <button
           type="button"
           disabled={actionPending}
           onClick={() => handleAction("RETREAT")}
-          className="rounded border border-zinc-500 bg-zinc-700 px-4 py-2 font-medium text-zinc-200 hover:bg-zinc-600 disabled:opacity-50"
+          className={`min-h-[44px] min-w-[44px] ${buttonGhost()}`}
+          data-testid="btn-flee"
         >
-          Retreat
+          {actionLabels.flee}
         </button>
       </div>
 
       <Link
         href={`/game?slotIndex=${slotNum}`}
-        className="mt-8 inline-block text-sm text-zinc-500 hover:text-zinc-300"
+        className="mt-8 inline-block text-sm text-zinc-500 hover:text-zinc-300 min-h-[44px] flex items-center"
       >
-        ← Back to Hub
+        {actionLabels.backToHub}
       </Link>
     </div>
   );

@@ -24,3 +24,34 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ambient background animations (ruined shrine theme) */
+@keyframes fog-drift {
+  0%,
+  100% {
+    transform: translateX(-5%) translateY(0);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translateX(5%) translateY(2%);
+    opacity: 0.14;
+  }
+}
+
+@keyframes rune-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-fog-drift {
+  animation: fog-drift 25s ease-in-out infinite;
+}
+
+.animate-rune-pulse {
+  animation: rune-pulse 4s ease-in-out infinite;
+}

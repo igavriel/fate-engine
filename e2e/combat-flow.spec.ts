@@ -4,16 +4,14 @@ import { randomEmail, registerAndLogin } from "./auth";
 /** Ensure we land on hub for slot 1: create new character or continue existing; handles create failure (e.g. slot already filled). */
 async function ensureHubSlot1(page: import("@playwright/test").Page) {
   await page.goto("/slots");
-  await expect(page.getByRole("heading", { name: /save slots|slots/i })).toBeVisible({
-    timeout: 10000,
-  });
-  const slot1NewGame = page.getByRole("link", { name: /new game/i }).first();
-  const slot1Continue = page.getByRole("link", { name: /continue/i }).first();
-  if (await slot1NewGame.isVisible()) {
-    await slot1NewGame.click();
+  await expect(page.getByTestId("page-slots")).toBeVisible({ timeout: 10000 });
+  const slot1Bind = page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i });
+  const slot1Resume = page.getByTestId("vessel-card-0").getByRole("link", { name: /resume descent/i });
+  if (await slot1Bind.isVisible()) {
+    await slot1Bind.click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("E2E Hero");
-    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
     const navigatedToGame = await Promise.race([
       page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 }).then(() => true),
       page
@@ -23,31 +21,19 @@ async function ensureHubSlot1(page: import("@playwright/test").Page) {
     ]).catch(() => false);
     if (!navigatedToGame && page.url().includes("/create")) {
       await page.goto("/slots");
-      const slot1ContinueLink = page
-        .locator("div.rounded-lg")
-        .filter({ hasText: /Slot 1/ })
-        .first()
-        .getByRole("link", { name: /continue/i });
-      if ((await slot1ContinueLink.count()) > 0) {
-        await slot1ContinueLink.click();
+      const slot1ResumeLink = page.getByTestId("vessel-card-0").getByRole("link", { name: /resume descent/i });
+      if ((await slot1ResumeLink.count()) > 0) {
+        await slot1ResumeLink.click();
       } else {
-        // Slot 1 still empty (create failed/timed out); retry create once
-        await page
-          .locator("div.rounded-lg")
-          .filter({ hasText: /Slot 1/ })
-          .first()
-          .getByRole("link", { name: /new game/i })
-          .click();
+        await page.getByTestId("vessel-card-0").getByRole("link", { name: /bind/i }).click();
         await expect(page).toHaveURL(/\/create\?slotIndex=1/);
         await page.getByLabel(/name/i).fill("E2E Hero");
-        await page
-          .getByRole("button", { name: /create & enter|create/i })
-          .click({ noWaitAfter: true });
+        await page.getByRole("button", { name: /begin the descent/i }).click({ noWaitAfter: true });
         await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
       }
     }
   } else {
-    await slot1Continue.click();
+    await slot1Resume.click();
   }
   await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 }
@@ -61,16 +47,15 @@ test.describe("Combat flow", () => {
     const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
-    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
+    await expect(page.getByTestId("page-game")).toBeVisible();
+    await expect(page.getByText("Pick your prey.")).toBeVisible();
 
-    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({
-      timeout: 1000,
-    });
-    await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
+    await expect(page.getByTestId("btn-confront").first()).toBeVisible({ timeout: 1000 });
+    await page.getByTestId("btn-confront").first().click({ noWaitAfter: true });
     await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
-    await expect(page.getByRole("heading", { name: /combat/i }).first()).toBeVisible();
+    await expect(page.getByTestId("page-combat")).toBeVisible();
 
-    const attackBtn = page.getByRole("button", { name: /^attack$/i });
+    const attackBtn = page.getByTestId("btn-strike");
     await expect(attackBtn).toBeVisible();
 
     while (true) {
@@ -84,12 +69,11 @@ test.describe("Combat flow", () => {
 
     await expect(page).toHaveURL(/\/game\?slotIndex=1/);
 
-    const summaryDialog = page.getByRole("dialog");
+    const summaryDialog = page.getByTestId("aftermath-modal");
     await expect(summaryDialog).toBeVisible({ timeout: 1000 });
-    await expect(summaryDialog.getByText(/victory|retreat|defeat/i)).toBeVisible();
+    await expect(summaryDialog.getByText(/the omen breaks|you slip away|the shrine claims you/i)).toBeVisible();
 
-    // Summary shows coins gained and loot section (item or "No items found")
-    const summaryModal = page.getByTestId("summary-modal");
+    const summaryModal = page.getByTestId("aftermath-modal");
     await expect(summaryModal).toBeVisible({ timeout: 1000 });
     await expect(summaryModal.getByText(/coins:/i)).toBeVisible();
     const lootSection = summaryModal.getByTestId("summary-loot");
@@ -102,26 +86,26 @@ test.describe("Combat flow", () => {
     await expect(summaryDialog).not.toBeVisible({ timeout: 1000 });
 
     await expect(page).toHaveURL(/\/game\?slotIndex=1/);
-    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
+    await expect(page.getByTestId("page-game")).toBeVisible();
   });
 
   test("retreat path: start encounter, retreat, summary with RETREAT, ack", async ({ page }) => {
     const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
-    await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
+    await page.getByTestId("btn-confront").first().click({ noWaitAfter: true });
     await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
 
-    await page.getByRole("button", { name: /retreat/i }).click({ noWaitAfter: true });
+    await page.getByTestId("btn-flee").click({ noWaitAfter: true });
     await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
-    const summaryDialog = page.getByRole("dialog");
+    const summaryDialog = page.getByTestId("aftermath-modal");
     await expect(summaryDialog).toBeVisible({ timeout: 1000 });
-    await expect(summaryDialog.getByText(/retreat/i)).toBeVisible();
+    await expect(summaryDialog.getByText(/you slip away/i)).toBeVisible();
 
     await summaryDialog.getByRole("button", { name: /continue/i }).click();
     await expect(summaryDialog).not.toBeVisible({ timeout: 1000 });
-    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
+    await expect(page.getByTestId("page-game")).toBeVisible();
   });
 
   test("mapped error ENCOUNTER_ACTIVE: start fight, return to hub, try fight again shows friendly message", async ({
@@ -130,16 +114,16 @@ test.describe("Combat flow", () => {
     const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
-    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
+    await expect(page.getByTestId("page-game")).toBeVisible();
 
-    await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
+    await page.getByTestId("btn-confront").first().click({ noWaitAfter: true });
     await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
-    await expect(page.getByRole("heading", { name: /combat/i }).first()).toBeVisible();
+    await expect(page.getByTestId("page-combat")).toBeVisible();
 
     await page.getByRole("link", { name: /back to hub/i }).click();
     await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
-    await page.getByRole("button", { name: /fight/i }).first().click();
+    await page.getByTestId("btn-confront").first().click();
     await expect(
       page.getByText("You already have an active fight. Returning to combat.")
     ).toBeVisible({ timeout: 2000 });
@@ -155,40 +139,34 @@ test.describe("Combat flow", () => {
 
     for (let tryCount = 0; tryCount < maxTries && !defeatSeen; tryCount++) {
       await page.goto("/game?slotIndex=1");
-      await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible({
-        timeout: 5000,
-      });
+      await expect(page.getByTestId("page-game")).toBeVisible({ timeout: 5000 });
 
-      // Dismiss any open summary from a previous combat so Fight buttons become enabled
-      const summaryDialog = page.getByRole("dialog");
+      const summaryDialog = page.getByTestId("aftermath-modal");
       if (await summaryDialog.isVisible()) {
         await summaryDialog.getByRole("button", { name: /continue/i }).click();
         await expect(summaryDialog).not.toBeVisible({ timeout: 2000 });
       }
 
-      // Wait for an enabled Fight button (they are disabled while summary is open)
-      const fightBtn = page.getByRole("button", { name: /fight/i }).first();
+      const fightBtn = page.getByTestId("btn-confront").first();
       await expect(fightBtn).toBeEnabled({ timeout: 2000 });
 
-      // Prefer ELITE enemy when present; cards are enemy-card-0, enemy-card-1, ...
       const eliteCard = page
-        .locator("[data-testid^=enemy-card-]")
+        .locator("[data-testid^=omen-card-]")
         .filter({ has: page.getByTestId("enemy-tier").filter({ hasText: /^ELITE$/i }) })
         .first();
       if ((await eliteCard.count()) > 0) {
-        await eliteCard.getByRole("button", { name: /fight/i }).click({ noWaitAfter: true });
+        await eliteCard.getByTestId("btn-confront").click({ noWaitAfter: true });
       } else {
         await fightBtn.click({ noWaitAfter: true });
       }
 
-      // Either we navigated to combat, or we have ENCOUNTER_ACTIVE and must click "Go to Combat"
       const combatLink = page.getByRole("link", { name: /go to combat/i });
       if (await combatLink.isVisible().catch(() => false)) {
         await combatLink.click();
       }
       await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 10000 });
 
-      const attackBtn = page.getByRole("button", { name: /^attack$/i });
+      const attackBtn = page.getByTestId("btn-strike");
       for (let i = 0; i < 50; i++) {
         await attackBtn.click();
         // Wait for either navigation to game (combat ended) or 400ms – avoids sending another
@@ -199,16 +177,15 @@ test.describe("Combat flow", () => {
         ]);
         const url = page.url();
         if (url.includes("/game")) {
-          const dialog = page.getByRole("dialog");
+          const dialog = page.getByTestId("aftermath-modal");
           if (await dialog.isVisible()) {
             const text = await dialog.textContent();
-            if (text?.toLowerCase().includes("defeat")) {
+            if (text?.toLowerCase().includes("shrine claims you")) {
               defeatSeen = true;
-              await expect(dialog.getByText(/defeat/i)).toBeVisible();
+              await expect(dialog.getByText(/the shrine claims you/i)).toBeVisible();
               await dialog.getByRole("button", { name: /continue/i }).click();
               await expect(dialog).not.toBeVisible({ timeout: 1000 });
             } else {
-              // Dismiss Victory/Retreat so next try starts clean
               await dialog.getByRole("button", { name: /continue/i }).click();
               await expect(dialog).not.toBeVisible({ timeout: 1000 });
             }
