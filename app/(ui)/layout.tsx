@@ -25,10 +25,10 @@ export default function UiLayout({
           >
             Fate Engine
           </Link>
-          <Link href="/slots" className="text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center">
+          <Link href="/vessels" className="text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center">
             {labels.Slot}s
           </Link>
-          <Link href="/login" className="text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center">
+          <Link href="/seal" className="text-zinc-400 hover:text-zinc-200 min-h-[44px] min-w-[44px] inline-flex items-center">
             Login
           </Link>
         </div>

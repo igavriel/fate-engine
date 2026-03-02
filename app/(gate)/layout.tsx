@@ -1,0 +1,20 @@
+import type { Metadata } from "next";
+import { AmbientBackground } from "@/src/ui/components/AmbientBackground";
+
+export const metadata: Metadata = {
+  title: "Fate Engine",
+  description: "Web RPG",
+};
+
+export default function GateLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <div className="relative min-h-screen bg-[#0c0a0b] text-zinc-100 font-ui">
+      <AmbientBackground />
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        {children}
+      </main>
+    </div>
+  );
+}

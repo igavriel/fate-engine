@@ -1,0 +1,156 @@
+/* Fate Engine — Motion keyframes and tiny utility classes */
+
+@keyframes fogDrift {
+  0%,
+  100% {
+    transform: translateX(-5%) translateY(0);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translateX(5%) translateY(2%);
+    opacity: 0.14;
+  }
+}
+
+@keyframes runePulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-40%) rotate(12deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.12;
+  }
+  60% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: translateX(40%) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes flashDamage {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  25% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes flashHeal {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+  25% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes logIn {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+    filter: blur(0.5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.fe-fog-drift {
+  animation: fogDrift 25s ease-in-out infinite;
+}
+
+.fe-rune-pulse {
+  animation: runePulse 4s ease-in-out infinite;
+}
+
+.fe-log-in {
+  animation: logIn 260ms ease-out both;
+}
+
+.fe-flash-damage {
+  animation: flashDamage 420ms ease-out both;
+}
+
+.fe-flash-heal {
+  animation: flashHeal 420ms ease-out both;
+}
+
+/* ELITE glow + shimmer (CSS-only, no layout shift) */
+.fe-elite {
+  position: relative;
+}
+
+.fe-glow-elite {
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.25),
+    0 0 26px rgba(245, 158, 11, 0.12);
+}
+
+.fe-glow-elite::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 80% 55% at 50% 30%,
+    rgba(245, 158, 11, 0.16) 0%,
+    rgba(245, 158, 11, 0.06) 45%,
+    transparent 70%
+  );
+  animation: runePulse 4s ease-in-out infinite;
+}
+
+.fe-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.fe-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 158, 11, 0.18) 45%,
+    rgba(245, 158, 11, 0.06) 55%,
+    transparent 100%
+  );
+  animation: shimmer 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fe-fog-drift,
+  .fe-rune-pulse,
+  .fe-log-in,
+  .fe-flash-damage,
+  .fe-flash-heal,
+  .fe-glow-elite::before,
+  .fe-shimmer::after {
+    animation: none !important;
+  }
+}
+
