@@ -59,7 +59,7 @@ To confirm local dev uses the same Postgres as the deployed app:
    pnpm dev              # start app; hit /api/db-check to see same DB
    ```
 
-4. Open `/api/health` and `/api/db-check` in the browser; both should succeed. For Phase 1A: log in, go to Slots, create a character in a slot, then open the Game Hub and confirm status bar and 3 enemy cards (Weak/Normal/Tough) appear.
+4. Open `/api/health` and `/api/db-check` in the browser; both should succeed.
 
 ## Vercel deployment
 
@@ -77,7 +77,7 @@ To confirm local dev uses the same Postgres as the deployed app:
 6. **E2E:** `pnpm e2e` — Playwright tests (login, flows)
 7. **Build & lint:** `pnpm build` and `pnpm lint` — no errors
 
-## Phase 0 (done)
+## Phase 0
 
 - Health and db-check API routes
 - Auth skeleton: register, login, logout, me (JWT in cookie)
@@ -86,7 +86,7 @@ To confirm local dev uses the same Postgres as the deployed app:
 - Pino logging, Zod env validation
 - Vitest + Playwright + one smoke e2e
 
-## Phase 1A + 1B/1C (current)
+## Phase 1
 
 - **Flow:** Login → Slot Selection → Character Creation → Game Hub → Combat, inventory, run end.
 - **API:** Slots, character/create, status, enemies, encounter/start, combat, action, summary, summary/ack, run/end, inventory, equip, unequip, sell, use (all under `/api/game/*` with auth). Zod DTOs throughout.
@@ -94,7 +94,7 @@ To confirm local dev uses the same Postgres as the deployed app:
 - **Domain:** Deterministic RNG (Mulberry32), enemy generation, combat resolution, loot, progression (see `src/domain/`).
 - **UI:** `/slots`, `/create?slotIndex=#`, `/game?slotIndex=#` with status, enemies, combat, inventory, and run end.
 
-## Phase 1C1 (Backend combat) — done
+## Phase 1 - Backend combat
 
 - **API:** POST encounter/start, GET combat, POST action (ATTACK/HEAL/RETREAT), GET summary, POST summary/ack, POST run/end. Combat state in `Run.stateJson`; deterministic outcomes from seed + turnCounter/fightCounter.
 - **Domain:** `src/domain/combat/`, `src/domain/progression/`, `src/domain/loot/`. Unit and integration tests; `tests/integration/combat-flow.test.ts` and `run-lifecycle.test.ts` cover flow when `DATABASE_URL` is set.

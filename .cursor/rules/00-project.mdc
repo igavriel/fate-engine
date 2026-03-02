@@ -14,5 +14,5 @@ alwaysApply: true
 - **Auth:** JWT in httpOnly cookie `fe_auth`. bcrypt for passwords. All `/api/game/*` routes require auth.
 - **Env:** Validate with Zod in `src/server/env/env.ts`. Never commit `.env`; use `.env.example` / `.env.test.example`.
 - **Logging:** pino via `src/server/log/logger.ts`; use `withTraceId()` for request tracing.
-- **Tests:** Vitest for unit/integration (`tests/`), Playwright for e2e (`e2e/`).
+- **Tests:** Vitest for unit/integration (`tests/`), Playwright for e2e (`e2e/`). Every new feature must have unit and/or integration tests with ≥ 90% line coverage. Every UI flow must have an e2e test.
 - **DB:** Prisma 7 — connection URL in `prisma.config.ts` (CLI); runtime uses `@prisma/adapter-pg` in `src/server/db/prisma.ts`. Migrations in `prisma/migrations/`. Run `pnpm db:generate` after schema changes; `vercel-build` on main for production deploys.

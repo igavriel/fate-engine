@@ -81,7 +81,7 @@ describe("GET /api/game/enemies", () => {
         },
         {
           choiceId: "c",
-          tier: "TOUGH",
+          tier: "ELITE",
           name: "Troll",
           species: "troll",
           level: 3,

@@ -1,5 +1,5 @@
 /**
- * Run.stateJson shape for Phase 1C combat.
+ * Run.stateJson shape for combat.
  * See docs/03-domain-rules.md for full schema.
  */
 
@@ -27,6 +27,17 @@ export interface RunStateLogEntry {
   text: string;
 }
 
+/** Maximum combat log entries kept in stateJson and returned by getCombat. */
+export const COMBAT_LOG_MAX_ENTRIES = 50;
+
+/** Returns the last `max` log entries, preserving order. */
+export function capCombatLog(
+  log: RunStateLogEntry[],
+  max: number = COMBAT_LOG_MAX_ENTRIES
+): RunStateLogEntry[] {
+  return log.length <= max ? log : log.slice(-max);
+}
+
 export interface RunStateSummaryLootItem {
   name: string;
   itemType: "WEAPON" | "ARMOR" | "POTION";
@@ -34,6 +45,7 @@ export interface RunStateSummaryLootItem {
   attackBonus?: number;
   defenseBonus?: number;
   healPercent?: number;
+  requiredLevel?: number;
 }
 
 export interface RunStateSummary {

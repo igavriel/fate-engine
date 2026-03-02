@@ -1,7 +1,7 @@
 # State Machine
 
 Screen flow: **Login → Slot Selection → Character Creation → Game Hub → (Combat later)**.  
-Post-Combat Summary and Recovery are Phase 1C.
+Post-Combat Summary and Recovery
 
 ---
 
@@ -14,11 +14,11 @@ stateDiagram-v2
     SlotSelection --> CharacterCreation : New Game (empty slot)
     SlotSelection --> GameHub : Continue (occupied slot)
     CharacterCreation --> GameHub : character created
-    GameHub --> GameHub : view status / enemies (Phase 1A)
-    GameHub --> Combat : start encounter (Phase 1C)
-    Combat --> PostCombatSummary : fight resolved (Phase 1C)
-    PostCombatSummary --> Recovery : Phase 1C
-    Recovery --> GameHub : Phase 1C
+    GameHub --> GameHub : view status / enemies
+    GameHub --> Combat : start encounter
+    Combat --> PostCombatSummary : fight resolved
+    PostCombatSummary --> Recovery : recovery
+    Recovery --> GameHub
 ```
 
 ---
@@ -34,9 +34,9 @@ stateDiagram-v2
     SlotSelection --> CharacterCreation : user picks empty slot → GET /create?slotIndex=#
     SlotSelection --> GameHub : user picks occupied slot → GET /game?slotIndex=#
     CharacterCreation --> GameHub : POST /api/game/character/create → GET /api/game/status, GET /api/game/enemies
-    GameHub --> GameHub : GET /api/game/status, GET /api/game/enemies (read-only Phase 1A)
-    GameHub --> Combat : (Phase 1C) encounter start
-    Combat --> PostCombatSummary : (Phase 1C) fight end
-    PostCombatSummary --> Recovery : (Phase 1C)
-    Recovery --> GameHub : (Phase 1C)
+    GameHub --> GameHub : GET /api/game/status, GET /api/game/enemies
+    GameHub --> Combat : encounter start
+    Combat --> PostCombatSummary : fight end
+    PostCombatSummary --> Recovery : recovery
+    Recovery --> GameHub 
 ```

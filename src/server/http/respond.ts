@@ -57,7 +57,7 @@ export function serverError(message = "Internal server error", traceId?: string)
 export function errorResponse(
   code: string,
   message: string,
-  status: 400 | 404 | 500,
+  status: 400 | 404 | 409 | 500,
   traceId?: string
 ): NextResponse {
   return fail(code, message, status, undefined, traceId);

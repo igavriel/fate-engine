@@ -1,10 +1,11 @@
 import { createRng } from "@/domain/rng/createRng";
 import type { EnemyChoice, EnemyTier } from "@/shared/zod/game";
+import { getSpeciesStats } from "@/domain/enemies/enemyPools";
 
 const TIER_WEIGHT: Record<EnemyTier, number> = {
   WEAK: 1,
   NORMAL: 2,
-  TOUGH: 3,
+  ELITE: 3,
 };
 
 export interface EncounterEnemySnapshot {
@@ -43,16 +44,17 @@ export interface StartEncounterResult {
 export function startEncounter(input: StartEncounterInput): StartEncounterResult {
   const { seed, fightCounter, chosenEnemy, encounterId, now } = input;
   const rng = createRng(seed + fightCounter);
+  const { hpMult, atkMult, defMult } = getSpeciesStats(chosenEnemy.species);
 
   const tierWeight = TIER_WEIGHT[chosenEnemy.tier];
-  const enemyHpMax = Math.max(10, chosenEnemy.level * 8 + rng.int(0, chosenEnemy.level * 2));
+  const baseHp = chosenEnemy.level * 8 + rng.int(0, chosenEnemy.level * 2);
+  const enemyHpMax = Math.max(10, Math.round(baseHp * hpMult));
   const enemyHp = enemyHpMax;
 
-  // Deterministic attack/defense from level and tier
-  const baseAtk = chosenEnemy.level * 2 + tierWeight;
-  const baseDef = chosenEnemy.level + tierWeight;
-  const attack = Math.max(1, baseAtk + rng.int(-1, 2));
-  const defense = Math.max(0, baseDef + rng.int(-1, 1));
+  const baseAtk = chosenEnemy.level * 2 + tierWeight + rng.int(-1, 2);
+  const baseDef = chosenEnemy.level + tierWeight + rng.int(-1, 1);
+  const attack = Math.max(1, Math.round(baseAtk * atkMult));
+  const defense = Math.max(0, Math.round(baseDef * defMult));
 
   const enemy: EncounterEnemySnapshot = {
     choiceId: chosenEnemy.choiceId,

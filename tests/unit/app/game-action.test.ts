@@ -18,7 +18,7 @@ vi.mock("@/server/game/combatService", () => ({
     constructor(
       public code: string,
       message: string,
-      public status: 400 | 404
+      public status: 400 | 404 | 409
     ) {
       super(message);
       this.name = "CombatError";
@@ -94,5 +94,68 @@ describe("POST /api/game/action", () => {
       })
     );
     expect(res.status).toBe(404);
+    const data = (await res.json()) as { error: { code: string } };
+    expect(data.error.code).toBe("NO_ACTIVE_ENCOUNTER");
+  });
+
+  it("returns 409 when CombatError SUMMARY_PENDING", async () => {
+    mockRequireAuth.mockResolvedValue("user-1");
+    mockParseJson.mockResolvedValue({
+      success: true,
+      data: { slotIndex: 1, type: "ATTACK" },
+    });
+    const { CombatError } = await import("@/server/game/combatService");
+    mockApplyAction.mockRejectedValue(
+      new CombatError("SUMMARY_PENDING", "Acknowledge summary first", 409)
+    );
+    const res = await POST(
+      new Request("http://localhost/api/game/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: "fe_auth=x" },
+        body: JSON.stringify({ slotIndex: 1, type: "ATTACK" }),
+      })
+    );
+    expect(res.status).toBe(409);
+    const data = (await res.json()) as { error: { code: string } };
+    expect(data.error.code).toBe("SUMMARY_PENDING");
+  });
+
+  it("returns 409 when CombatError RUN_OVER", async () => {
+    mockRequireAuth.mockResolvedValue("user-1");
+    mockParseJson.mockResolvedValue({
+      success: true,
+      data: { slotIndex: 1, type: "ATTACK" },
+    });
+    const { CombatError } = await import("@/server/game/combatService");
+    mockApplyAction.mockRejectedValue(new CombatError("RUN_OVER", "Run has ended", 409));
+    const res = await POST(
+      new Request("http://localhost/api/game/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: "fe_auth=x" },
+        body: JSON.stringify({ slotIndex: 1, type: "ATTACK" }),
+      })
+    );
+    expect(res.status).toBe(409);
+    const data = (await res.json()) as { error: { code: string } };
+    expect(data.error.code).toBe("RUN_OVER");
+  });
+
+  it("returns 500 when applyAction throws non-CombatError non-GameError", async () => {
+    mockRequireAuth.mockResolvedValue("user-1");
+    mockParseJson.mockResolvedValue({
+      success: true,
+      data: { slotIndex: 1, type: "ATTACK" },
+    });
+    mockApplyAction.mockRejectedValue(new Error("Unexpected DB error"));
+    const res = await POST(
+      new Request("http://localhost/api/game/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: "fe_auth=x" },
+        body: JSON.stringify({ slotIndex: 1, type: "ATTACK" }),
+      })
+    );
+    expect(res.status).toBe(500);
+    const data = (await res.json()) as { error: { code: string } };
+    expect(data.error.code).toBe("INTERNAL_ERROR");
   });
 });

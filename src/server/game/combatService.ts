@@ -1,6 +1,15 @@
 import { prisma } from "@/server/db/prisma";
-import { requireRunForSlot } from "@/server/game/requireRunForSlot";
-import { getRunState, type RunStateJson, type RunStateSummary } from "@/server/game/runState";
+import {
+  requireRunForSlot,
+  requireRunForSlotWithTx,
+} from "@/server/game/requireRunForSlot";
+import {
+  getRunState,
+  capCombatLog,
+  COMBAT_LOG_MAX_ENTRIES,
+  type RunStateJson,
+  type RunStateSummary,
+} from "@/server/game/runState";
 import { getGameStatus } from "@/server/game/status";
 import { getInventory } from "@/server/game/inventoryService";
 import { computeEffectiveStats } from "@/domain/stats/computeEffectiveStats";
@@ -9,7 +18,7 @@ import { startEncounter as domainStartEncounter } from "@/domain/combat/startEnc
 import { resolveCombatAction, type CombatActionType } from "@/domain/combat/resolveCombatAction";
 import { xpGainedForKill, addXp, applyLevelUps } from "@/domain/progression/xp";
 import { computeLevelUpGrowth } from "@/domain/progression/levelUp";
-import { generateLoot } from "@/domain/loot/generateLoot";
+import { computeLoot } from "@/domain/loot/lootTables";
 import type {
   StartEncounterResponse,
   CombatStateResponse,
@@ -25,7 +34,7 @@ export class CombatError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly status: 400 | 404
+    public readonly status: 400 | 404 | 409
   ) {
     super(message);
     this.name = "CombatError";
@@ -41,12 +50,14 @@ export async function startEncounter(
   const state = getRunState(run.stateJson);
 
   if (state.summary) {
-    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 400);
+    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 409);
   }
   if (state.encounter) {
-    throw new CombatError("ENCOUNTER_ACTIVE", "An encounter is already active", 400);
+    throw new CombatError("ENCOUNTER_ACTIVE", "An encounter is already active", 409);
   }
 
+  // Current 3 choices are derived from run state (seed, fightCounter, level). Any choiceId from
+  // a different fight (e.g. after fightCounter has advanced) is rejected with INVALID_CHOICE.
   const choices = generateEnemyChoices({
     seed: run.seed,
     fightCounter: run.fightCounter,
@@ -147,7 +158,7 @@ export async function getCombat(
       hp: state.encounter.enemyHp,
       hpMax: state.encounter.enemyHpMax,
     },
-    log: state.log,
+    log: capCombatLog(state.log, COMBAT_LOG_MAX_ENTRIES),
     canHeal: potionCount > 0,
   };
 }
@@ -157,71 +168,80 @@ export async function applyAction(
   slotIndex: 1 | 2 | 3,
   type: CombatActionType
 ): Promise<ActionResponse> {
-  const { character, run } = await requireRunForSlot(userId, slotIndex);
-  const state = getRunState(run.stateJson);
+  let outcome: "CONTINUE" | "WIN" | "RETREAT" | "DEFEAT" = "CONTINUE";
 
-  if (!state.encounter) {
-    throw new CombatError("NO_ACTIVE_ENCOUNTER", "No active encounter", 404);
-  }
-  if (state.summary) {
-    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 400);
-  }
+  await prisma.$transaction(async (tx) => {
+    const { character, run } = await requireRunForSlotWithTx(tx, userId, slotIndex);
+    const state = getRunState(run.stateJson);
 
-  const equipment = await prisma.runEquipment.findUnique({
-    where: { runId: run.id },
-    include: {
-      weaponInventoryItem: { include: { itemCatalog: true } },
-      armorInventoryItem: { include: { itemCatalog: true } },
-    },
-  });
-  const baseStats = {
-    attack: character.baseAttack,
-    defense: character.baseDefense,
-    luck: character.baseLuck,
-    hpMax: character.baseHpMax,
-  };
-  const weaponBonus = equipment?.weaponInventoryItem?.itemCatalog
-    ? { attackBonus: equipment.weaponInventoryItem.itemCatalog.attackBonus }
-    : null;
-  const armorBonus = equipment?.armorInventoryItem?.itemCatalog
-    ? { defenseBonus: equipment.armorInventoryItem.itemCatalog.defenseBonus }
-    : null;
-  const effectiveStats = computeEffectiveStats(baseStats, weaponBonus, armorBonus);
-
-  const potions = await prisma.runInventoryItem.findMany({
-    where: { runId: run.id },
-    include: { itemCatalog: true },
-  });
-  const potionRows = potions.filter((p) => p.itemCatalog.itemType === "POTION");
-  const canHeal = potionRows.some((p) => p.quantity >= 1);
-
-  const resolveResult = resolveCombatAction({
-    seed: run.seed,
-    turnCounter: run.turnCounter,
-    playerHp: run.hp,
-    playerHpMax: character.baseHpMax,
-    playerAttack: effectiveStats.attack,
-    playerDefense: effectiveStats.defense,
-    playerLuck: effectiveStats.luck,
-    playerCoins: run.coins,
-    encounter: {
-      enemy: state.encounter.enemy,
-      enemyHp: state.encounter.enemyHp,
-    },
-    action: type,
-    canHeal,
-    healPercent: HEAL_PERCENT,
-  });
-
-  let newHp = run.hp + resolveResult.hpDelta;
-  if (resolveResult.healIntent) {
-    const healAmount = resolveResult.healIntent.healAmount;
-    newHp = Math.min(character.baseHpMax, run.hp + healAmount);
-    const potionItem = potionRows.find((p) => p.quantity >= 1);
-    if (!potionItem) {
-      throw new CombatError("NO_POTION", "No potion available", 400);
+    if (run.status === "OVER") {
+      throw new CombatError("RUN_OVER", "Run has ended", 409);
     }
-    await prisma.$transaction(async (tx) => {
+    if (state.summary) {
+      throw new CombatError(
+        "SUMMARY_PENDING",
+        "Acknowledge the previous combat summary first",
+        409
+      );
+    }
+    if (!state.encounter) {
+      throw new CombatError("NO_ACTIVE_ENCOUNTER", "No active encounter", 404);
+    }
+
+    const equipment = await tx.runEquipment.findUnique({
+      where: { runId: run.id },
+      include: {
+        weaponInventoryItem: { include: { itemCatalog: true } },
+        armorInventoryItem: { include: { itemCatalog: true } },
+      },
+    });
+    const baseStats = {
+      attack: character.baseAttack,
+      defense: character.baseDefense,
+      luck: character.baseLuck,
+      hpMax: character.baseHpMax,
+    };
+    const weaponBonus = equipment?.weaponInventoryItem?.itemCatalog
+      ? { attackBonus: equipment.weaponInventoryItem.itemCatalog.attackBonus }
+      : null;
+    const armorBonus = equipment?.armorInventoryItem?.itemCatalog
+      ? { defenseBonus: equipment.armorInventoryItem.itemCatalog.defenseBonus }
+      : null;
+    const effectiveStats = computeEffectiveStats(baseStats, weaponBonus, armorBonus);
+
+    const potions = await tx.runInventoryItem.findMany({
+      where: { runId: run.id },
+      include: { itemCatalog: true },
+    });
+    const potionRows = potions.filter((p) => p.itemCatalog.itemType === "POTION");
+    const canHeal = potionRows.some((p) => p.quantity >= 1);
+
+    const resolveResult = resolveCombatAction({
+      seed: run.seed,
+      turnCounter: run.turnCounter,
+      playerHp: run.hp,
+      playerHpMax: character.baseHpMax,
+      playerAttack: effectiveStats.attack,
+      playerDefense: effectiveStats.defense,
+      playerLuck: effectiveStats.luck,
+      playerCoins: run.coins,
+      encounter: {
+        enemy: state.encounter.enemy,
+        enemyHp: state.encounter.enemyHp,
+      },
+      action: type,
+      canHeal,
+      healPercent: HEAL_PERCENT,
+    });
+
+    let newHp = run.hp + resolveResult.hpDelta;
+    if (resolveResult.healIntent) {
+      const healAmount = resolveResult.healIntent.healAmount;
+      newHp = Math.min(character.baseHpMax, run.hp + healAmount);
+      const potionItem = potionRows.find((p) => p.quantity >= 1);
+      if (!potionItem) {
+        throw new CombatError("NO_POTION", "No potion available", 400);
+      }
       if (potionItem.quantity === 1) {
         await tx.runInventoryItem.delete({ where: { id: potionItem.id } });
       } else {
@@ -230,82 +250,133 @@ export async function applyAction(
           data: { quantity: potionItem.quantity - 1 },
         });
       }
-    });
-  }
+    }
 
-  const newCoins = run.coins + resolveResult.coinsDelta;
-  const newLog = [...state.log, resolveResult.logEntry];
+    const newCoins = run.coins + resolveResult.coinsDelta;
+    const newLog = capCombatLog(
+      [...state.log, resolveResult.logEntry],
+      COMBAT_LOG_MAX_ENTRIES
+    );
 
-  let nextState: RunStateJson;
-  const runUpdate: {
-    hp: number;
-    coins: number;
-    turnCounter: number;
-    lastOutcome?: string;
-    stateJson: object;
-  } = {
-    hp: Math.max(0, newHp),
-    coins: Math.max(0, newCoins),
-    turnCounter: resolveResult.nextTurnCounter,
-    stateJson: {
-      version: 1,
-      encounter: {
-        ...state.encounter,
-        enemyHp: resolveResult.enemyHpAfter,
-      },
-      log: newLog,
-      summary: null,
-    } as unknown as object,
-  };
-
-  if (resolveResult.outcome !== "CONTINUE") {
-    runUpdate.lastOutcome = resolveResult.outcome;
-    nextState = {
-      version: 1,
-      log: newLog,
-      summary: null,
+    const runUpdate: {
+      hp: number;
+      coins: number;
+      turnCounter: number;
+      lastOutcome?: string;
+      stateJson: object;
+    } = {
+      hp: Math.max(0, newHp),
+      coins: Math.max(0, newCoins),
+      turnCounter: resolveResult.nextTurnCounter,
+      stateJson: {
+        version: 1,
+        encounter: {
+          ...state.encounter,
+          enemyHp: resolveResult.enemyHpAfter,
+        },
+        log: newLog,
+        summary: null,
+      } as unknown as object,
     };
 
-    const enemySnapshot = state.encounter.enemy;
-    let summaryData: RunStateSummary;
+    if (resolveResult.outcome !== "CONTINUE") {
+      runUpdate.lastOutcome = resolveResult.outcome;
+      const nextState: RunStateJson = {
+        version: 1,
+        log: newLog,
+        summary: null,
+      };
+      const enemySnapshot = state.encounter.enemy;
+      let summaryData: RunStateSummary;
 
-    if (resolveResult.outcome === "WIN") {
-      const xpGain = xpGainedForKill(enemySnapshot.level);
-      const totalXp = addXp(character.xp, character.level, xpGain);
-      const levelResult = applyLevelUps(totalXp, character.level);
-      const catalogIds = (await prisma.itemCatalog.findMany({ select: { id: true } })).map(
-        (c) => c.id
-      );
-      const lootResult = generateLoot({
-        seed: run.seed,
-        fightCounter: run.fightCounter - 1,
-        enemyLevel: enemySnapshot.level,
-        enemyTier: enemySnapshot.tier,
-        catalogIds,
-      });
-
-      let level = character.level;
-      let baseAttack = character.baseAttack;
-      let baseDefense = character.baseDefense;
-      let baseLuck = character.baseLuck;
-      let baseHpMax = character.baseHpMax;
-
-      for (let i = 0; i < levelResult.levelsGained; i++) {
-        level += 1;
-        const growth = computeLevelUpGrowth({
-          seed: run.seed,
-          newLevel: level,
-          species: character.species as "HUMAN" | "DWARF" | "ELF" | "MAGE",
+      if (resolveResult.outcome === "WIN") {
+        const xpGain = xpGainedForKill(enemySnapshot.level);
+        const totalXp = addXp(character.xp, character.level, xpGain);
+        const levelResult = applyLevelUps(totalXp, character.level);
+        const catalogRows = await tx.itemCatalog.findMany({
+          select: {
+            id: true,
+            itemType: true,
+            attackBonus: true,
+            defenseBonus: true,
+            healPercent: true,
+            requiredLevel: true,
+            powerScore: true,
+          },
         });
-        baseAttack += growth.statDelta.attack;
-        baseDefense += growth.statDelta.defense;
-        baseLuck += growth.statDelta.luck;
-        baseHpMax += growth.statDelta.hpMax;
-      }
-      const finalHp =
-        levelResult.levelsGained > 0 ? baseHpMax : Math.min(character.baseHpMax, newHp);
+        const catalogItems = catalogRows.map((c) => ({
+          id: c.id,
+          itemType: c.itemType as "WEAPON" | "ARMOR" | "POTION",
+          attackBonus: c.attackBonus,
+          defenseBonus: c.defenseBonus,
+          healPercent: c.healPercent,
+          requiredLevel: c.requiredLevel,
+          powerScore: c.powerScore,
+        }));
+        const lootResult = computeLoot({
+          seed: run.seed,
+          fightCounter: run.fightCounter - 1,
+          enemyLevel: enemySnapshot.level,
+          enemyTier: enemySnapshot.tier,
+          playerLevel: character.level,
+          catalogItems,
+        });
 
-      await prisma.$transaction(async (tx) => {
+        let level = character.level;
+        let baseAttack = character.baseAttack;
+        let baseDefense = character.baseDefense;
+        let baseLuck = character.baseLuck;
+        let baseHpMax = character.baseHpMax;
+
+        for (let i = 0; i < levelResult.levelsGained; i++) {
+          level += 1;
+          const growth = computeLevelUpGrowth({
+            seed: run.seed,
+            newLevel: level,
+            species: character.species as "HUMAN" | "DWARF" | "ELF" | "MAGE",
+          });
+          baseAttack += growth.statDelta.attack;
+          baseDefense += growth.statDelta.defense;
+          baseLuck += growth.statDelta.luck;
+          baseHpMax += growth.statDelta.hpMax;
+        }
+        const finalHp =
+          levelResult.levelsGained > 0 ? baseHpMax : Math.min(character.baseHpMax, newHp);
+
+        const lootWithCatalog = await Promise.all(
+          lootResult.itemDrops.map(async (d) => {
+            const catalog = await tx.itemCatalog.findUnique({
+              where: { id: d.itemCatalogId },
+            });
+            return {
+              name: catalog?.name ?? "Unknown",
+              itemType: catalog?.itemType ?? "POTION",
+              quantity: d.quantity,
+              attackBonus: catalog?.attackBonus,
+              defenseBonus: catalog?.defenseBonus,
+              healPercent: catalog?.healPercent,
+              requiredLevel: catalog?.requiredLevel,
+            };
+          })
+        );
+
+        summaryData = {
+          outcome: "WIN",
+          enemy: {
+            name: enemySnapshot.name,
+            species: enemySnapshot.species,
+            level: enemySnapshot.level,
+          },
+          delta: {
+            xpGained: xpGain,
+            coinsGained: lootResult.coinsGained,
+            hpChange: finalHp - run.hp,
+          },
+          loot: lootWithCatalog,
+          leveledUp: levelResult.levelsGained > 0,
+          newLevel: levelResult.levelsGained > 0 ? level : undefined,
+        };
+
         await tx.character.update({
           where: { id: character.id },
           data: {
@@ -324,7 +395,7 @@ export async function applyAction(
             coins: run.coins + lootResult.coinsGained,
             turnCounter: resolveResult.nextTurnCounter,
             lastOutcome: "WIN",
-            stateJson: { version: 1, log: newLog, summary: null } as object,
+            stateJson: { version: 1, log: newLog, summary: summaryData } as object,
           },
         });
         for (const drop of lootResult.itemDrops) {
@@ -338,7 +409,11 @@ export async function applyAction(
             });
           } else {
             await tx.runInventoryItem.create({
-              data: { runId: run.id, itemCatalogId: drop.itemCatalogId, quantity: drop.quantity },
+              data: {
+                runId: run.id,
+                itemCatalogId: drop.itemCatalogId,
+                quantity: drop.quantity,
+              },
             });
           }
         }
@@ -368,150 +443,124 @@ export async function applyAction(
             },
           });
         }
-      });
-
-      const lootWithCatalog = await Promise.all(
-        lootResult.itemDrops.map(async (d) => {
-          const catalog = await prisma.itemCatalog.findUnique({
-            where: { id: d.itemCatalogId },
+      } else if (resolveResult.outcome === "RETREAT") {
+        await tx.run.update({
+          where: { id: run.id },
+          data: {
+            hp: newHp,
+            coins: newCoins,
+            turnCounter: resolveResult.nextTurnCounter,
+            lastOutcome: "RETREAT",
+            stateJson: { version: 1, log: newLog, summary: null } as object,
+          },
+        });
+        const stats = await tx.characterStats.findUnique({
+          where: { characterId: character.id },
+        });
+        if (stats) {
+          await tx.characterStats.update({
+            where: { characterId: character.id },
+            data: {
+              totalFights: stats.totalFights + 1,
+              retreats: stats.retreats + 1,
+              lastFightSummary: {
+                outcome: "RETREAT",
+                enemy: {
+                  name: enemySnapshot.name,
+                  species: enemySnapshot.species,
+                  level: enemySnapshot.level,
+                },
+              } as object,
+            },
           });
-          return {
-            name: catalog?.name ?? "Unknown",
-            itemType: catalog?.itemType ?? "POTION",
-            quantity: d.quantity,
-            attackBonus: catalog?.attackBonus,
-            defenseBonus: catalog?.defenseBonus,
-            healPercent: catalog?.healPercent,
-          };
-        })
-      );
+        }
+        summaryData = {
+          outcome: "RETREAT",
+          enemy: {
+            name: enemySnapshot.name,
+            species: enemySnapshot.species,
+            level: enemySnapshot.level,
+          },
+          delta: { xpGained: 0, coinsGained: resolveResult.coinsDelta, hpChange: 0 },
+          loot: [],
+          leveledUp: false,
+        };
+        nextState.summary = summaryData;
+        await tx.run.update({
+          where: { id: run.id },
+          data: { stateJson: nextState as unknown as object },
+        });
+      } else {
+        // Defeat: run is over (no recovery when we persist DEFEAT)
+        await tx.run.update({
+          where: { id: run.id },
+          data: {
+            hp: 0,
+            coins: run.coins,
+            turnCounter: resolveResult.nextTurnCounter,
+            lastOutcome: "DEFEAT",
+            status: "OVER",
+            stateJson: { version: 1, log: newLog, summary: null } as object,
+          },
+        });
+        const stats = await tx.characterStats.findUnique({
+          where: { characterId: character.id },
+        });
+        if (stats) {
+          await tx.characterStats.update({
+            where: { characterId: character.id },
+            data: {
+              totalFights: stats.totalFights + 1,
+              losses: stats.losses + 1,
+              lastFightSummary: {
+                outcome: "DEFEAT",
+                enemy: {
+                  name: enemySnapshot.name,
+                  species: enemySnapshot.species,
+                  level: enemySnapshot.level,
+                },
+              } as object,
+            },
+          });
+        }
+        summaryData = {
+          outcome: "DEFEAT",
+          enemy: {
+            name: enemySnapshot.name,
+            species: enemySnapshot.species,
+            level: enemySnapshot.level,
+          },
+          delta: { xpGained: 0, coinsGained: 0, hpChange: -run.hp },
+          loot: [],
+          leveledUp: false,
+        };
+        nextState.summary = summaryData;
+        await tx.run.update({
+          where: { id: run.id },
+          data: { stateJson: nextState as unknown as object },
+        });
+      }
 
-      summaryData = {
-        outcome: "WIN",
-        enemy: {
-          name: enemySnapshot.name,
-          species: enemySnapshot.species,
-          level: enemySnapshot.level,
-        },
-        delta: {
-          xpGained: xpGain,
-          coinsGained: lootResult.coinsGained,
-          hpChange: finalHp - run.hp,
-        },
-        loot: lootWithCatalog,
-        leveledUp: levelResult.levelsGained > 0,
-        newLevel: levelResult.levelsGained > 0 ? level : undefined,
-      };
-    } else if (resolveResult.outcome === "RETREAT") {
-      await prisma.run.update({
-        where: { id: run.id },
-        data: {
-          hp: newHp,
-          coins: newCoins,
-          turnCounter: resolveResult.nextTurnCounter,
-          lastOutcome: "RETREAT",
-          stateJson: { version: 1, log: newLog, summary: null } as object,
-        },
-      });
-      const stats = await prisma.characterStats.findUnique({
-        where: { characterId: character.id },
-      });
-      if (stats) {
-        await prisma.characterStats.update({
-          where: { characterId: character.id },
-          data: {
-            totalFights: stats.totalFights + 1,
-            retreats: stats.retreats + 1,
-            lastFightSummary: {
-              outcome: "RETREAT",
-              enemy: {
-                name: enemySnapshot.name,
-                species: enemySnapshot.species,
-                level: enemySnapshot.level,
-              },
-            } as object,
-          },
-        });
-      }
-      summaryData = {
-        outcome: "RETREAT",
-        enemy: {
-          name: enemySnapshot.name,
-          species: enemySnapshot.species,
-          level: enemySnapshot.level,
-        },
-        delta: { xpGained: 0, coinsGained: resolveResult.coinsDelta, hpChange: 0 },
-        loot: [],
-        leveledUp: false,
-      };
     } else {
-      // Defeat: run is over (no recovery when we persist DEFEAT)
-      await prisma.run.update({
+      runUpdate.stateJson = {
+        version: 1,
+        encounter: {
+          ...state.encounter,
+          enemyHp: resolveResult.enemyHpAfter,
+        },
+        log: newLog,
+        summary: null,
+      } as unknown as object;
+      await tx.run.update({
         where: { id: run.id },
-        data: {
-          hp: 0,
-          coins: run.coins,
-          turnCounter: resolveResult.nextTurnCounter,
-          lastOutcome: "DEFEAT",
-          status: "OVER",
-          stateJson: { version: 1, log: newLog, summary: null } as object,
-        },
+        data: runUpdate,
       });
-      const stats = await prisma.characterStats.findUnique({
-        where: { characterId: character.id },
-      });
-      if (stats) {
-        await prisma.characterStats.update({
-          where: { characterId: character.id },
-          data: {
-            totalFights: stats.totalFights + 1,
-            losses: stats.losses + 1,
-            lastFightSummary: {
-              outcome: "DEFEAT",
-              enemy: {
-                name: enemySnapshot.name,
-                species: enemySnapshot.species,
-                level: enemySnapshot.level,
-              },
-            } as object,
-          },
-        });
-      }
-      summaryData = {
-        outcome: "DEFEAT",
-        enemy: {
-          name: enemySnapshot.name,
-          species: enemySnapshot.species,
-          level: enemySnapshot.level,
-        },
-        delta: { xpGained: 0, coinsGained: 0, hpChange: -run.hp },
-        loot: [],
-        leveledUp: false,
-      };
     }
 
-    nextState.summary = summaryData;
-    await prisma.run.update({
-      where: { id: run.id },
-      data: { stateJson: nextState as unknown as object },
-    });
-  } else {
-    runUpdate.stateJson = {
-      version: 1,
-      encounter: {
-        ...state.encounter,
-        enemyHp: resolveResult.enemyHpAfter,
-      },
-      log: newLog,
-      summary: null,
-    } as unknown as object;
-    await prisma.run.update({
-      where: { id: run.id },
-      data: runUpdate,
-    });
-  }
+    outcome = resolveResult.outcome;
+  });
 
-  return { outcome: resolveResult.outcome };
+  return { outcome };
 }
 
 export async function getSummary(userId: string, slotIndex: 1 | 2 | 3): Promise<SummaryResponse> {
@@ -540,9 +589,13 @@ export async function ackSummary(
   const { run } = await requireRunForSlot(userId, slotIndex);
   const state = getRunState(run.stateJson);
 
+  if (!state.summary) {
+    throw new CombatError("NO_SUMMARY", "No pending combat summary", 404);
+  }
+
   const newState: RunStateJson = {
     version: 1,
-    log: state.log,
+    log: capCombatLog(state.log, COMBAT_LOG_MAX_ENTRIES),
     summary: null,
   };
   await prisma.run.update({

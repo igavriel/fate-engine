@@ -79,7 +79,7 @@ Phase 1A must include Zod schemas & inferred TS types for:
 
 - SlotIndex (1..3)
 - Species enum: HUMAN, DWARF, ELF, MAGE
-- EnemyTier enum: WEAK, NORMAL, TOUGH
+- EnemyTier enum: WEAK, NORMAL, ELITE
 - Error shape: { error: { code, message, details? } }
 
 Endpoints schemas:
@@ -125,7 +125,7 @@ For Phase 1A:
 Return enemies: array length 3, each:
 
 - choiceId (string)
-- tier (WEAK|NORMAL|TOUGH)
+- tier (WEAK|NORMAL|ELITE)
 - name (string)
 - species (string) (enemy species list can be a string for now)
 - level (int >=1)
@@ -229,10 +229,10 @@ Rules:
   - run.seed
   - run.fightCounter (but Phase 1A "preview" should NOT increment fightCounter; we only increment in encounter/start in Phase 1C)
   - player level
-- Return 3 enemies with tiers WEAK/NORMAL/TOUGH
+- Return 3 enemies with tiers WEAK/NORMAL/ELITE
 - Scaling:
   enemyLevel = max(1, playerLevel + tierModifier)
-  tierModifier: weak=-1, normal=0, tough=+1
+  tierModifier: weak=-1, normal=0, elite=+1
 - Names/species deterministic using seed + fightCounter + tier index.
 
 Enemy loot preview:

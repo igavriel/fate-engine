@@ -59,11 +59,12 @@ export function resolveCombatAction(input: ResolveCombatActionInput): ResolveCom
 
   if (action === "RETREAT") {
     const penalty = Math.floor(playerCoins * 0.1);
+    const currentEnemyHp = Math.max(0, Number(encounter.enemyHp) || 0);
     return {
       nextTurnCounter: turnCounter + 1,
       hpDelta: 0,
       coinsDelta: -penalty,
-      enemyHpAfter: encounter.enemyHp,
+      enemyHpAfter: currentEnemyHp,
       outcome: "RETREAT",
       logEntry: {
         t: now,
@@ -73,13 +74,14 @@ export function resolveCombatAction(input: ResolveCombatActionInput): ResolveCom
   }
 
   if (action === "HEAL") {
+    const currentEnemyHp = Math.max(0, Number(encounter.enemyHp) || 0);
     const healAmount = Math.floor((playerHpMax * healPercent) / 100);
     if (!canHeal) {
       return {
         nextTurnCounter: turnCounter + 1,
         hpDelta: 0,
         coinsDelta: 0,
-        enemyHpAfter: encounter.enemyHp,
+        enemyHpAfter: currentEnemyHp,
         outcome: "CONTINUE",
         logEntry: { t: now, text: "No potion available; could not heal." },
       };
@@ -88,17 +90,18 @@ export function resolveCombatAction(input: ResolveCombatActionInput): ResolveCom
       nextTurnCounter: turnCounter + 1,
       hpDelta: healAmount,
       coinsDelta: 0,
-      enemyHpAfter: encounter.enemyHp,
+      enemyHpAfter: currentEnemyHp,
       outcome: "CONTINUE",
       logEntry: { t: now, text: `Used potion; healed ${healAmount} HP.` },
       healIntent: { requiresPotion: true, healAmount },
     };
   }
 
-  // ATTACK
+  // ATTACK: normalize enemyHp so string/undefined from JSON still yields correct WIN when defeated
+  const currentEnemyHp = Math.max(0, Number(encounter.enemyHp) || 0);
   const luckRoll = rng.int(0, playerLuck);
   const damage = Math.max(1, playerAttack - encounter.enemy.defense + luckRoll);
-  const enemyHpAfter = Math.max(0, encounter.enemyHp - damage);
+  const enemyHpAfter = Math.max(0, currentEnemyHp - damage);
 
   let outcome: "CONTINUE" | "WIN" | "DEFEAT" = "CONTINUE";
   if (enemyHpAfter <= 0) outcome = "WIN";

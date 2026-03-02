@@ -24,7 +24,7 @@ describe("getEnemies", () => {
     const result = await getEnemies("user-1", 1);
 
     expect(result.enemies).toHaveLength(3);
-    expect(result.enemies.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "TOUGH"]);
+    expect(result.enemies.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "ELITE"]);
     expect(mockRequireRunForSlot).toHaveBeenCalledWith("user-1", 1);
   });
 });

@@ -118,6 +118,8 @@ model ItemCatalog {
   defenseBonus    Int      @default(0)
   healPercent     Int      @default(25)
   sellValueCoins  Int
+  requiredLevel   Int      @default(1)
+  powerScore      Int      @default(1)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

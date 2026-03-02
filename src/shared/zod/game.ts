@@ -15,7 +15,7 @@ export const slotIndexQuerySchema = z.object({
 export const speciesSchema = z.enum(["HUMAN", "DWARF", "ELF", "MAGE"]);
 export type Species = z.infer<typeof speciesSchema>;
 
-export const enemyTierSchema = z.enum(["WEAK", "NORMAL", "TOUGH"]);
+export const enemyTierSchema = z.enum(["WEAK", "NORMAL", "ELITE"]);
 export type EnemyTier = z.infer<typeof enemyTierSchema>;
 
 // --- GET /api/game/slots (response)
@@ -131,6 +131,8 @@ export const inventoryItemCatalogSchema = z.object({
   defenseBonus: z.number().int(),
   healPercent: z.number().int(),
   sellValueCoins: z.number().int(),
+  requiredLevel: z.number().int().optional(),
+  powerScore: z.number().int().optional(),
 });
 
 export const inventoryItemSchema = z.object({
@@ -200,7 +202,7 @@ export const runEndResponseSchema = z.object({
 export type RunEndBody = z.infer<typeof runEndBodySchema>;
 export type RunEndResponse = z.infer<typeof runEndResponseSchema>;
 
-// --- Phase 1C: Combat
+// --- Combat
 
 // POST /api/game/encounter/start
 export const startEncounterBodySchema = z.object({
@@ -276,6 +278,7 @@ export const summaryLootItemSchema = z.object({
   attackBonus: z.number().int().optional(),
   defenseBonus: z.number().int().optional(),
   healPercent: z.number().int().optional(),
+  requiredLevel: z.number().int().optional(),
 });
 export const summaryResponseSchema = z.object({
   slotIndex: slotIndexSchema,

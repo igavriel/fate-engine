@@ -17,6 +17,8 @@ const mockGetInventory = vi.fn();
 
 vi.mock("@/server/game/requireRunForSlot", () => ({
   requireRunForSlot: (...args: unknown[]) => mockRequireRunForSlot(...args),
+  requireRunForSlotWithTx: (_tx: unknown, userId: unknown, slotIndex: unknown) =>
+    mockRequireRunForSlot(userId, slotIndex),
 }));
 
 const mockTxCharacterUpdate = vi.fn().mockResolvedValue(undefined);
@@ -31,6 +33,14 @@ const mockTxCharacterStatsFindUnique = vi
 const mockTxCharacterStatsUpdate = vi.fn().mockResolvedValue(undefined);
 const mockCharacterStatsFindUnique = vi.fn().mockResolvedValue(null);
 const mockCharacterStatsUpdate = vi.fn().mockResolvedValue(undefined);
+const mockTxItemCatalogFindMany = vi.fn().mockResolvedValue([{ id: "cat-1" }]);
+const mockTxItemCatalogFindUnique = vi.fn().mockResolvedValue({
+  name: "Item",
+  itemType: "POTION",
+  attackBonus: 0,
+  defenseBonus: 0,
+  healPercent: 25,
+});
 
 vi.mock("@/server/db/prisma", () => ({
   prisma: {
@@ -59,14 +69,20 @@ vi.mock("@/server/db/prisma", () => ({
     $transaction: vi.fn(
       (
         fn: (tx: {
-          character: { update: typeof mockTxCharacterUpdate };
-          run: { update: typeof mockTxRunUpdate };
+          runEquipment: { findUnique: typeof mockRunEquipmentFindUnique };
           runInventoryItem: {
+            findMany: typeof mockRunInventoryItemFindMany;
             findFirst: typeof mockTxRunInventoryItemFindFirst;
             update: typeof mockTxRunInventoryItemUpdate;
             create: typeof mockTxRunInventoryItemCreate;
             delete: typeof mockTxRunInventoryItemDelete;
           };
+          itemCatalog: {
+            findMany: typeof mockTxItemCatalogFindMany;
+            findUnique: typeof mockTxItemCatalogFindUnique;
+          };
+          character: { update: typeof mockTxCharacterUpdate };
+          run: { update: typeof mockTxRunUpdate };
           characterStats: {
             findUnique: typeof mockTxCharacterStatsFindUnique;
             update: typeof mockTxCharacterStatsUpdate;
@@ -74,14 +90,20 @@ vi.mock("@/server/db/prisma", () => ({
         }) => Promise<unknown>
       ) =>
         fn({
-          character: { update: mockTxCharacterUpdate },
-          run: { update: mockTxRunUpdate },
+          runEquipment: { findUnique: mockRunEquipmentFindUnique },
           runInventoryItem: {
+            findMany: mockRunInventoryItemFindMany,
             findFirst: mockTxRunInventoryItemFindFirst,
             update: mockTxRunInventoryItemUpdate,
             create: mockTxRunInventoryItemCreate,
             delete: mockTxRunInventoryItemDelete,
           },
+          itemCatalog: {
+            findMany: mockTxItemCatalogFindMany,
+            findUnique: mockTxItemCatalogFindUnique,
+          },
+          character: { update: mockTxCharacterUpdate },
+          run: { update: mockTxRunUpdate },
           characterStats: {
             findUnique: mockTxCharacterStatsFindUnique,
             update: mockTxCharacterStatsUpdate,
@@ -98,9 +120,9 @@ vi.mock("@/server/game/inventoryService", () => ({
   getInventory: (...args: unknown[]) => mockGetInventory(...args),
 }));
 
-const mockGenerateLoot = vi.fn();
-vi.mock("@/domain/loot/generateLoot", () => ({
-  generateLoot: (...args: unknown[]) => mockGenerateLoot(...args),
+const mockComputeLoot = vi.fn();
+vi.mock("@/domain/loot/lootTables", () => ({
+  computeLoot: (...args: unknown[]) => mockComputeLoot(...args),
 }));
 
 const runId = "run-1";
@@ -145,7 +167,7 @@ describe("combatService", () => {
     mockGetInventory.mockReset();
     mockCharacterStatsFindUnique.mockResolvedValue(null);
     mockCharacterStatsUpdate.mockResolvedValue(undefined);
-    mockGenerateLoot.mockReturnValue({ coinsGained: 10, itemDrops: [] });
+    mockComputeLoot.mockReturnValue({ coinsGained: 10, itemDrops: [] });
     mockRequireRunForSlot.mockResolvedValue({ character: baseRun.character, run: baseRun });
     mockRunUpdate.mockResolvedValue(undefined);
     mockRunEquipmentFindUnique.mockResolvedValue(null);
@@ -187,7 +209,7 @@ describe("combatService", () => {
       await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
       expect(err.code).toBe("SUMMARY_PENDING");
-      expect(err.status).toBe(400);
+      expect(err.status).toBe(409);
     });
 
     it("throws ENCOUNTER_ACTIVE when state has encounter", async () => {
@@ -205,12 +227,24 @@ describe("combatService", () => {
       await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
       expect(err.code).toBe("ENCOUNTER_ACTIVE");
+      expect(err.status).toBe(409);
     });
 
     it("throws INVALID_CHOICE when choiceId does not match", async () => {
       await expect(startEncounter("user-1", 1, "invalid-choice-id")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "invalid-choice-id").catch((e) => e);
       expect(err.code).toBe("INVALID_CHOICE");
+    });
+
+    it("throws INVALID_CHOICE when choiceId is stale (wrong fightCounter)", async () => {
+      mockRequireRunForSlot.mockResolvedValue({
+        character: baseRun.character,
+        run: { ...baseRun, fightCounter: 1, stateJson: null },
+      });
+      await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
+      const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
+      expect(err.code).toBe("INVALID_CHOICE");
+      expect(err.status).toBe(400);
     });
   });
 
@@ -360,6 +394,13 @@ describe("combatService", () => {
   });
 
   describe("ackSummary", () => {
+    it("throws NO_SUMMARY when state has no summary", async () => {
+      await expect(ackSummary("user-1", 1)).rejects.toThrow(CombatError);
+      const err = await ackSummary("user-1", 1).catch((e) => e);
+      expect(err.code).toBe("NO_SUMMARY");
+      expect(err.status).toBe(404);
+    });
+
     it("clears summary and returns status and inventory", async () => {
       mockRequireRunForSlot.mockResolvedValue({
         character: baseRun.character,
@@ -379,6 +420,7 @@ describe("combatService", () => {
       await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
       const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
       expect(err.code).toBe("NO_ACTIVE_ENCOUNTER");
+      expect(err.status).toBe(404);
     });
 
     it("throws SUMMARY_PENDING when summary exists", async () => {
@@ -410,6 +452,18 @@ describe("combatService", () => {
       await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
       const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
       expect(err.code).toBe("SUMMARY_PENDING");
+      expect(err.status).toBe(409);
+    });
+
+    it("throws RUN_OVER when run.status is OVER", async () => {
+      mockRequireRunForSlot.mockResolvedValue({
+        character: baseRun.character,
+        run: { ...baseRun, status: "OVER" },
+      });
+      await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
+      const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
+      expect(err.code).toBe("RUN_OVER");
+      expect(err.status).toBe(409);
     });
 
     it("returns outcome and updates run when ATTACK continues combat", async () => {
@@ -441,7 +495,45 @@ describe("combatService", () => {
       });
       const result = await applyAction("user-1", 1, "ATTACK");
       expect(["CONTINUE", "WIN", "DEFEAT"]).toContain(result.outcome);
-      expect(mockRunUpdate).toHaveBeenCalled();
+      expect(mockTxRunUpdate).toHaveBeenCalled();
+    });
+
+    it("append 60 logs => stored 50", async () => {
+      const existingLog = Array.from({ length: 59 }, (_, i) => ({
+        t: `2025-01-01T00:00:${String(i).padStart(2, "0")}Z`,
+        text: `msg ${i}`,
+      }));
+      mockRequireRunForSlot.mockResolvedValue({
+        character: baseRun.character,
+        run: {
+          ...baseRun,
+          hp: 20,
+          turnCounter: 0,
+          stateJson: {
+            version: 1,
+            encounter: {
+              encounterId: "enc-1",
+              enemy: {
+                choiceId: "e-1",
+                name: "Goblin",
+                species: "Beast",
+                level: 1,
+                tier: "WEAK" as const,
+                attack: 2,
+                defense: 1,
+              },
+              enemyHp: 100,
+              enemyHpMax: 100,
+            },
+            log: existingLog,
+          },
+        },
+      });
+      await applyAction("user-1", 1, "ATTACK");
+      const updateCall = mockTxRunUpdate.mock.calls[mockTxRunUpdate.mock.calls.length - 1];
+      const stateJson = updateCall?.[0]?.data?.stateJson as { log: unknown[] };
+      expect(stateJson).toBeDefined();
+      expect(stateJson.log).toHaveLength(50);
     });
 
     it("returns WIN and runs transaction when ATTACK kills enemy (enemyHp 1)", async () => {
@@ -474,14 +566,13 @@ describe("combatService", () => {
       });
       const result = await applyAction("user-1", 1, "ATTACK");
       expect(result.outcome).toBe("WIN");
-      expect(mockRunUpdate).toHaveBeenCalled();
-      expect(mockTxCharacterUpdate).toHaveBeenCalled();
       expect(mockTxRunUpdate).toHaveBeenCalled();
+      expect(mockTxCharacterUpdate).toHaveBeenCalled();
       expect(mockTxCharacterStatsUpdate).toHaveBeenCalled();
     });
 
     it("WIN with loot drop runs lootWithCatalog and create path", async () => {
-      mockGenerateLoot.mockReturnValueOnce({
+      mockComputeLoot.mockReturnValueOnce({
         coinsGained: 10,
         itemDrops: [{ itemCatalogId: "cat-1", quantity: 1 }],
       });
@@ -519,7 +610,7 @@ describe("combatService", () => {
     });
 
     it("WIN with loot drop and existing stack runs update path", async () => {
-      mockGenerateLoot.mockReturnValueOnce({
+      mockComputeLoot.mockReturnValueOnce({
         coinsGained: 10,
         itemDrops: [{ itemCatalogId: "cat-1", quantity: 1 }],
       });
@@ -594,8 +685,8 @@ describe("combatService", () => {
       });
       const result = await applyAction("user-1", 1, "RETREAT");
       expect(result.outcome).toBe("RETREAT");
-      expect(mockRunUpdate).toHaveBeenCalled();
-      expect(mockCharacterStatsUpdate).toHaveBeenCalled();
+      expect(mockTxRunUpdate).toHaveBeenCalled();
+      expect(mockTxCharacterStatsUpdate).toHaveBeenCalled();
     });
 
     it("returns DEFEAT when player hp goes to 0 from counterattack", async () => {
@@ -623,7 +714,7 @@ describe("combatService", () => {
                 name: "Ogre",
                 species: "Humanoid",
                 level: 2,
-                tier: "TOUGH" as const,
+                tier: "ELITE" as const,
                 attack: 15,
                 defense: 0,
               },
@@ -636,8 +727,8 @@ describe("combatService", () => {
       });
       const result = await applyAction("user-1", 1, "ATTACK");
       expect(result.outcome).toBe("DEFEAT");
-      expect(mockRunUpdate).toHaveBeenCalled();
-      expect(mockCharacterStatsUpdate).toHaveBeenCalled();
+      expect(mockTxRunUpdate).toHaveBeenCalled();
+      expect(mockTxCharacterStatsUpdate).toHaveBeenCalled();
     });
 
     it("HEAL consumes potion and updates run hp", async () => {
@@ -685,7 +776,7 @@ describe("combatService", () => {
       });
       const result = await applyAction("user-1", 1, "HEAL");
       expect(result.outcome).toBe("CONTINUE");
-      expect(mockRunUpdate).toHaveBeenCalled();
+      expect(mockTxRunUpdate).toHaveBeenCalled();
       expect(mockTxRunInventoryItemDelete).toHaveBeenCalled();
     });
 
