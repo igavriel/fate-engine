@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getRunState } from "@/server/game/runState";
+import { getRunState, capCombatLog, COMBAT_LOG_MAX_ENTRIES } from "@/server/game/runState";
 
 describe("getRunState", () => {
   it("returns default state for null", () => {
@@ -81,5 +81,18 @@ describe("getRunState", () => {
   it("uses version 1 when version is missing", () => {
     const state = getRunState({ log: [] });
     expect(state.version).toBe(1);
+  });
+});
+
+describe("capCombatLog", () => {
+  it("keeps only last N entries and preserves order", () => {
+    const log = Array.from({ length: 60 }, (_, i) => ({
+      t: `2025-01-01T00:00:${String(i).padStart(2, "0")}.000Z`,
+      text: `entry ${i}`,
+    }));
+    const capped = capCombatLog(log, 50);
+    expect(capped).toHaveLength(50);
+    expect(capped[0]).toEqual(log[10]);
+    expect(capped[49]).toEqual(log[59]);
   });
 });

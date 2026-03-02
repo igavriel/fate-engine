@@ -1,4 +1,8 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
+
+/** Transaction client type (first argument of prisma.$transaction callback). */
+export type PrismaTransactionClient = Prisma.TransactionClient;
 
 /** Thrown by requireRunForSlot; routes map to { error: { code, message } } with appropriate status. */
 export class GameError extends Error {
@@ -73,6 +77,45 @@ export async function requireRunForSlot(
   slotIndex: number
 ): Promise<RequireRunForSlotResult> {
   const slot = await prisma.saveSlot.findUnique({
+    where: { userId_slotIndex: { userId, slotIndex } },
+    include: {
+      run: { include: { character: true } },
+    },
+  });
+
+  if (!slot) {
+    throw new GameError("SLOT_NOT_FOUND", "Slot not found", 404);
+  }
+
+  if (slot.characterId == null || slot.runId == null) {
+    throw new GameError("SLOT_EMPTY", "Slot has no character or run", 400);
+  }
+
+  if (!slot.run || !slot.run.character) {
+    throw new GameError("DATA_INCONSISTENT", "Character or run missing for slot", 500);
+  }
+
+  return {
+    slot: {
+      ...slot,
+      characterId: slot.characterId,
+      runId: slot.runId,
+    },
+    character: slot.run.character,
+    run: slot.run,
+  };
+}
+
+/**
+ * Same as requireRunForSlot but uses the given transaction client for atomic reads.
+ * Use inside prisma.$transaction so loads and subsequent writes share the same snapshot.
+ */
+export async function requireRunForSlotWithTx(
+  tx: PrismaTransactionClient,
+  userId: string,
+  slotIndex: number
+): Promise<RequireRunForSlotResult> {
+  const slot = await tx.saveSlot.findUnique({
     where: { userId_slotIndex: { userId, slotIndex } },
     include: {
       run: { include: { character: true } },

@@ -1,24 +1,5 @@
 import { test, expect } from "@playwright/test";
-
-function uniqueEmail() {
-  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@test.local`;
-}
-
-async function registerAndLogin(page: import("@playwright/test").Page, email: string) {
-  const password = "password123";
-  await page.goto("/login");
-  await expect(page.getByRole("heading", { name: /login|register/i })).toBeVisible();
-  await page.getByRole("button", { name: "Register" }).click();
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole("button", { name: "Register" }).click();
-  await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
-  await page.getByRole("button", { name: "Login" }).click();
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole("button", { name: "Login" }).click();
-  await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
-}
+import { randomEmail, registerAndLogin } from "./auth";
 
 /** Ensure we land on hub for slot 1: create new character or continue existing; handles create failure (e.g. slot already filled). */
 async function ensureHubSlot1(page: import("@playwright/test").Page) {
@@ -77,7 +58,7 @@ test.describe("Combat flow", () => {
   test("happy path: WIN – start encounter, attack until win, summary modal, ack", async ({
     page,
   }) => {
-    const email = uniqueEmail();
+    const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
@@ -115,7 +96,7 @@ test.describe("Combat flow", () => {
   });
 
   test("retreat path: start encounter, retreat, summary with RETREAT, ack", async ({ page }) => {
-    const email = uniqueEmail();
+    const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
     await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
@@ -133,8 +114,29 @@ test.describe("Combat flow", () => {
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
   });
 
+  test("mapped error ENCOUNTER_ACTIVE: start fight, return to hub, try fight again shows friendly message", async ({
+    page,
+  }) => {
+    const email = randomEmail();
+    await registerAndLogin(page, email);
+    await ensureHubSlot1(page);
+    await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
+
+    await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
+    await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
+    await expect(page.getByRole("heading", { name: /combat/i }).first()).toBeVisible();
+
+    await page.getByRole("link", { name: /back to hub/i }).click();
+    await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
+
+    await page.getByRole("button", { name: /fight/i }).first().click();
+    await expect(
+      page.getByText("You already have an active fight. Returning to combat.")
+    ).toBeVisible({ timeout: 2000 });
+  });
+
   test("defeat path (best-effort): TOUGH enemy until DEFEAT or skip", async ({ page }) => {
-    const email = uniqueEmail();
+    const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
 

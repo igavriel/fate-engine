@@ -16,8 +16,8 @@
     "db:seed": "pnpm prisma db seed",
     "vercel-build": "prisma migrate deploy && prisma generate && next build",
     "test": "vitest run --coverage",
-    "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "ci-tests": "pnpm test && pnpm e2e"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

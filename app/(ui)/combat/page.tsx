@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import type { CombatStateResponse } from "@/shared/zod/game";
+import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
 
 type ApiError = { error: { code: string; message: string } };
 
@@ -34,7 +35,7 @@ function CombatPageInner() {
         router.replace(`/game?slotIndex=${slotNum}&message=no_encounter`);
         return null;
       }
-      setError(err.error?.message ?? "Failed to load combat");
+      setError(gameErrorMessage(err.error?.code, "Failed to load combat"));
       return null;
     }
     setCombat(data as CombatStateResponse);
@@ -76,7 +77,7 @@ function CombatPageInner() {
       const data = (await res.json()) as { outcome?: string } | ApiError;
       if (!res.ok) {
         const err = data as ApiError;
-        setError(err.error?.message ?? "Action failed");
+        setError(gameErrorMessage(err.error?.code, "Action failed"));
         return;
       }
       const outcome = (data as { outcome: string }).outcome;

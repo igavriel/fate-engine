@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { InventoryItem, RunStatus } from "@/shared/zod/game";
 import type { SummaryResponse } from "@/shared/zod/game";
 import { SummaryModal } from "@/components/SummaryModal";
+import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
 
 type GameStatus = { slotIndex: number; run: RunStatus };
 
@@ -67,12 +68,12 @@ function GamePageInner() {
         }
         if (!inventoryRes.ok) {
           const d = (await inventoryRes.json()) as ApiError;
-          if (!cancelled) setError(d.error?.message ?? "Failed to load game");
+          if (!cancelled) setError(gameErrorMessage(d.error?.code, "Failed to load game"));
           return;
         }
         if (!enemiesRes.ok) {
           const d = (await enemiesRes.json()) as ApiError;
-          if (!cancelled) setError(d.error?.message ?? "Failed to load enemies");
+          if (!cancelled) setError(gameErrorMessage(d.error?.code, "Failed to load enemies"));
           return;
         }
         const invData = (await inventoryRes.json()) as InventoryWithStatus;
@@ -112,12 +113,12 @@ function GamePageInner() {
           inventoryItemId: itemId,
         }),
       });
-      const data = (await res.json()) as InventoryWithStatus | { error?: { message?: string } };
+      const data = (await res.json()) as InventoryWithStatus | ApiError;
       if (res.ok && "status" in data) {
         setStatus(data.status);
         setInventory(data.inventory);
       } else if (!res.ok && "error" in data) {
-        setError((data as { error: { message?: string } }).error?.message ?? "Equip failed");
+        setError(gameErrorMessage((data as ApiError).error?.code, "Equip failed"));
       }
     } finally {
       setActionPending(null);
@@ -134,12 +135,12 @@ function GamePageInner() {
         credentials: "include",
         body: JSON.stringify({ slotIndex: Number(slotNum), equipmentSlot }),
       });
-      const data = (await res.json()) as InventoryWithStatus | { error?: { message?: string } };
+      const data = (await res.json()) as InventoryWithStatus | ApiError;
       if (res.ok && "status" in data) {
         setStatus(data.status);
         setInventory(data.inventory);
       } else if (!res.ok && "error" in data) {
-        setError((data as { error: { message?: string } }).error?.message ?? "Unequip failed");
+        setError(gameErrorMessage((data as ApiError).error?.code, "Unequip failed"));
       }
     } finally {
       setActionPending(null);
@@ -156,12 +157,12 @@ function GamePageInner() {
         credentials: "include",
         body: JSON.stringify({ slotIndex: Number(slotNum), inventoryItemId: itemId }),
       });
-      const data = (await res.json()) as InventoryWithStatus | { error?: { message?: string } };
+      const data = (await res.json()) as InventoryWithStatus | ApiError;
       if (res.ok && "status" in data) {
         setStatus(data.status);
         setInventory(data.inventory);
       } else if (!res.ok && "error" in data) {
-        setError((data as { error: { message?: string } }).error?.message ?? "Use failed");
+        setError(gameErrorMessage((data as ApiError).error?.code, "Use failed"));
       }
     } finally {
       setActionPending(null);
@@ -183,7 +184,7 @@ function GamePageInner() {
         setStatus(data.status);
         setInventory(data.inventory);
       } else if (!res.ok && "error" in data) {
-        setError((data as ApiError).error?.message ?? "Sell failed");
+        setError(gameErrorMessage((data as ApiError).error?.code, "Sell failed"));
       }
     } finally {
       setActionPending(null);
@@ -208,14 +209,8 @@ function GamePageInner() {
         return;
       }
       const err = data as ApiError;
-      if (err.error?.code === "SUMMARY_PENDING") {
-        setEncounterStartError("You have a pending summary to review.");
-      } else if (err.error?.code === "ENCOUNTER_ACTIVE") {
-        setEncounterActive(true);
-        setEncounterStartError("An encounter is already active.");
-      } else {
-        setEncounterStartError(err.error?.message ?? "Failed to start encounter");
-      }
+      setEncounterActive(err.error?.code === "ENCOUNTER_ACTIVE");
+      setEncounterStartError(gameErrorMessage(err.error?.code, "Failed to start encounter"));
     } catch {
       setEncounterStartError("Network error");
     } finally {
@@ -242,7 +237,7 @@ function GamePageInner() {
         setSummary(null);
         setSummaryAckError(null);
       } else {
-        setSummaryAckError((data as ApiError).error?.message ?? "Failed to continue");
+        setSummaryAckError(gameErrorMessage((data as ApiError).error?.code, "Failed to continue"));
       }
     } catch {
       setSummaryAckError("Network error");
