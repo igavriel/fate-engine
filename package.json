@@ -18,7 +18,7 @@
     "ci-tests": "pnpm test && pnpm e2e",
     "vercel-build:deploy": "prisma migrate deploy && prisma generate && next build",
     "vercel-build:reset": "prisma migrate reset -f && pnpm vercel-build:deploy",
-    "vercel-build": "pnpm vercel-build:reset"
+    "vercel-build": "pnpm vercel-build:deploy"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
