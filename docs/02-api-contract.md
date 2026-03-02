@@ -162,7 +162,7 @@ Returns 404 if slot missing or empty.
 - `slotIndex`, `outcome`: `"WIN"` | `"RETREAT"` | `"DEFEAT"`
 - `enemy`: `{ name, species, level }`
 - `delta`: `{ xpGained, coinsGained, hpChange }`
-- `loot`: `[{ name, itemType, quantity, attackBonus?, defenseBonus?, healPercent? }]`
+- `loot`: array of loot items (may be empty on WIN if no item dropped). Each item: `{ name, itemType, quantity, attackBonus?, defenseBonus?, healPercent? }`
 - `leveledUp`: boolean, `newLevel?`: number
 
 **Errors:** `NO_SUMMARY`, `SLOT_NOT_FOUND`, `SLOT_EMPTY`.

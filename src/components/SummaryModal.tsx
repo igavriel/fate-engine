@@ -31,6 +31,7 @@ export function SummaryModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="summary-title"
+      data-testid="summary-modal"
     >
       <div className="w-full max-w-md rounded-lg border border-zinc-600 bg-zinc-900 p-6 shadow-xl">
         <h2 id="summary-title" className={`text-xl font-bold ${outcomeColor}`}>
@@ -46,12 +47,15 @@ export function SummaryModal({
             {summary.delta.hpChange}
           </p>
           <p className="text-zinc-300">XP: +{summary.delta.xpGained}</p>
-          <p className="text-zinc-300">Coins: +{summary.delta.coinsGained}</p>
+          <p className="text-zinc-300">
+            Coins: {summary.delta.coinsGained >= 0 ? "+" : ""}
+            {summary.delta.coinsGained}
+          </p>
         </div>
 
-        {summary.loot.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-zinc-400">Loot</h3>
+        <div className="mt-4" data-testid="summary-loot">
+          <h3 className="text-sm font-medium text-zinc-400">Loot</h3>
+          {summary.loot.length > 0 ? (
             <ul className="mt-2 space-y-1 text-sm text-zinc-300">
               {summary.loot.map((item, i) => (
                 <li key={i}>
@@ -62,8 +66,10 @@ export function SummaryModal({
                 </li>
               ))}
             </ul>
-          </div>
-        )}
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500">No items found</p>
+          )}
+        </div>
 
         {summary.leveledUp && summary.newLevel != null && (
           <p className="mt-4 text-amber-400">Level up! You are now level {summary.newLevel}.</p>

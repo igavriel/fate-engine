@@ -16,6 +16,7 @@
     "db:seed": "pnpm prisma db seed",
     "vercel-build": "prisma migrate deploy && prisma generate && next build",
     "test": "vitest run --coverage",
+    "test:coverage-gate-2b": "pnpm test && node scripts/check-phase2b-coverage.mjs",
     "e2e": "playwright test",
     "ci-tests": "pnpm test && pnpm e2e"
   },

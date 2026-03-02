@@ -31,3 +31,12 @@ The test client uses `@prisma/adapter-pg` in `src/server/db/prismaTest.ts` with 
   - `src/domain/enemies/enemyPools.ts`
   - `src/domain/enemies/generateEnemyChoices.ts`
 - The script reads `coverage/coverage-final.json` (produced by `pnpm test`) and exits with code 1 if any listed file is below the threshold.
+
+## Phase 2B coverage gate (loot)
+
+- **Script:** `scripts/check-phase2b-coverage.mjs`
+- **Run:** `node scripts/check-phase2b-coverage.mjs` after `pnpm test` (or add to CI).
+- **Rule:** Line coverage for Phase 2B loot files must be ≥ 90%:
+  - `src/domain/loot/lootTables.ts`
+  - `src/domain/loot/selectDropItem.ts`
+- The script reads `coverage/coverage-final.json` and exits with code 1 if any listed file is below the threshold.

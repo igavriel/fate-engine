@@ -88,6 +88,16 @@ test.describe("Combat flow", () => {
     await expect(summaryDialog).toBeVisible({ timeout: 1000 });
     await expect(summaryDialog.getByText(/victory|retreat|defeat/i)).toBeVisible();
 
+    // Phase 2B: summary shows coins gained and loot section (item or "No items found")
+    const summaryModal = page.getByTestId("summary-modal");
+    await expect(summaryModal).toBeVisible({ timeout: 1000 });
+    await expect(summaryModal.getByText(/coins:/i)).toBeVisible();
+    const lootSection = summaryModal.getByTestId("summary-loot");
+    await expect(lootSection).toBeVisible();
+    await expect(
+      lootSection.getByText("No items found").or(lootSection.locator("ul li").first())
+    ).toBeVisible();
+
     await summaryDialog.getByRole("button", { name: /continue/i }).click();
     await expect(summaryDialog).not.toBeVisible({ timeout: 1000 });
 

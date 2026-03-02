@@ -18,7 +18,7 @@ import { startEncounter as domainStartEncounter } from "@/domain/combat/startEnc
 import { resolveCombatAction, type CombatActionType } from "@/domain/combat/resolveCombatAction";
 import { xpGainedForKill, addXp, applyLevelUps } from "@/domain/progression/xp";
 import { computeLevelUpGrowth } from "@/domain/progression/levelUp";
-import { generateLoot } from "@/domain/loot/generateLoot";
+import { computeLoot } from "@/domain/loot/lootTables";
 import type {
   StartEncounterResponse,
   CombatStateResponse,
@@ -293,15 +293,28 @@ export async function applyAction(
         const xpGain = xpGainedForKill(enemySnapshot.level);
         const totalXp = addXp(character.xp, character.level, xpGain);
         const levelResult = applyLevelUps(totalXp, character.level);
-        const catalogIds = (await tx.itemCatalog.findMany({ select: { id: true } })).map(
-          (c) => c.id
-        );
-        const lootResult = generateLoot({
+        const catalogRows = await tx.itemCatalog.findMany({
+          select: {
+            id: true,
+            itemType: true,
+            attackBonus: true,
+            defenseBonus: true,
+            healPercent: true,
+          },
+        });
+        const catalogItems = catalogRows.map((c) => ({
+          id: c.id,
+          itemType: c.itemType as "WEAPON" | "ARMOR" | "POTION",
+          attackBonus: c.attackBonus,
+          defenseBonus: c.defenseBonus,
+          healPercent: c.healPercent,
+        }));
+        const lootResult = computeLoot({
           seed: run.seed,
           fightCounter: run.fightCounter - 1,
           enemyLevel: enemySnapshot.level,
           enemyTier: enemySnapshot.tier,
-          catalogIds,
+          catalogItems,
         });
 
         let level = character.level;

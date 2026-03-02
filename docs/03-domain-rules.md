@@ -46,7 +46,30 @@
 
 - `base = enemyLevel * tierWeight`, where tierWeight: WEAK = 1, NORMAL = 2, ELITE = 3.
 - `estimatedLootCoinsMin = base * 2`, `estimatedLootCoinsMax = base * 4` (integers).
-- Actual loot logic is deferred to Phase 1B/1C.
+- Actual loot logic is in Phase 2B (deterministic loot tables).
+
+## Deterministic loot (Phase 2B)
+
+Rewards on WIN are deterministic: same `seed`, `fightCounter`, enemy tier/level → same coins and same drop/no-drop.
+
+- **RNG stream:** `rng = createRng(seed + fightCounter + 2000)` (offset so loot does not collide with encounter/action RNG).
+
+### Coins
+
+- `base = enemyLevel * 5`
+- Tier multiplier: WEAK = 1.2, NORMAL = 1.0, ELITE = 1.4
+- `coinsGained = round(base * multiplier) + rng.int(0, enemyLevel)`
+
+So WEAK gives slightly more coins per level, ELITE gives the most (1.4×). Defeat gives no coins; retreat applies existing penalty.
+
+### Item drop chance (deterministic)
+
+- Roll `rng.int(1, 100)`.
+- WEAK: drop if roll ≤ 25
+- NORMAL: drop if roll ≤ 40
+- ELITE: drop if roll ≤ 65
+
+If a drop occurs, one item is chosen from the catalog via `selectDropItem` (tier-biased power cap: WEAK ≤2, NORMAL ≤3, ELITE ≤5 power score). Item type is weighted 50% weapon, 35% armor, 15% potion. `fightCounter` is **not** mutated on WIN; it increments only when an encounter starts.
 
 ## Run.stateJson (Phase 1C)
 
@@ -74,7 +97,7 @@ Encounter and combat state are stored in `Run.stateJson` (no separate Encounter 
     "outcome": "WIN" | "RETREAT" | "DEFEAT",
     "enemy": { "name": "string", "species": "string", "level": 1 },
     "delta": { "xpGained": 0, "coinsGained": 0, "hpChange": 0 },
-    "loot": [{ "name": "string", "itemType": "WEAPON"|"ARMOR"|"POTION", "quantity": 1, "attackBonus"?: 0, "defenseBonus"?: 0, "healPercent"?: 25 }],
+    "loot": [] | [{ "name": "string", "itemType": "WEAPON"|"ARMOR"|"POTION", "quantity": 1, "attackBonus"?: 0, "defenseBonus"?: 0, "healPercent"?: 25 }],
     "leveledUp": false,
     "newLevel"?: 2
   } | null

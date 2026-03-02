@@ -120,9 +120,9 @@ vi.mock("@/server/game/inventoryService", () => ({
   getInventory: (...args: unknown[]) => mockGetInventory(...args),
 }));
 
-const mockGenerateLoot = vi.fn();
-vi.mock("@/domain/loot/generateLoot", () => ({
-  generateLoot: (...args: unknown[]) => mockGenerateLoot(...args),
+const mockComputeLoot = vi.fn();
+vi.mock("@/domain/loot/lootTables", () => ({
+  computeLoot: (...args: unknown[]) => mockComputeLoot(...args),
 }));
 
 const runId = "run-1";
@@ -167,7 +167,7 @@ describe("combatService", () => {
     mockGetInventory.mockReset();
     mockCharacterStatsFindUnique.mockResolvedValue(null);
     mockCharacterStatsUpdate.mockResolvedValue(undefined);
-    mockGenerateLoot.mockReturnValue({ coinsGained: 10, itemDrops: [] });
+    mockComputeLoot.mockReturnValue({ coinsGained: 10, itemDrops: [] });
     mockRequireRunForSlot.mockResolvedValue({ character: baseRun.character, run: baseRun });
     mockRunUpdate.mockResolvedValue(undefined);
     mockRunEquipmentFindUnique.mockResolvedValue(null);
@@ -572,7 +572,7 @@ describe("combatService", () => {
     });
 
     it("WIN with loot drop runs lootWithCatalog and create path", async () => {
-      mockGenerateLoot.mockReturnValueOnce({
+      mockComputeLoot.mockReturnValueOnce({
         coinsGained: 10,
         itemDrops: [{ itemCatalogId: "cat-1", quantity: 1 }],
       });
@@ -610,7 +610,7 @@ describe("combatService", () => {
     });
 
     it("WIN with loot drop and existing stack runs update path", async () => {
-      mockGenerateLoot.mockReturnValueOnce({
+      mockComputeLoot.mockReturnValueOnce({
         coinsGained: 10,
         itemDrops: [{ itemCatalogId: "cat-1", quantity: 1 }],
       });
