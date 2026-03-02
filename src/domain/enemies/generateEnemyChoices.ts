@@ -1,5 +1,10 @@
 import type { EnemyChoice, EnemyTier } from "@/shared/zod/game";
 import { createRng } from "@/domain/rng/createRng";
+import {
+  SPECIES_LIST,
+  getNamePoolForSpecies,
+  type EnemySpeciesId,
+} from "@/domain/enemies/enemyPools";
 
 const TIER_MODIFIER: Record<EnemyTier, number> = {
   WEAK: -1,
@@ -13,26 +18,6 @@ const TIER_WEIGHT: Record<EnemyTier, number> = {
   ELITE: 3,
 };
 
-const ENEMY_NAMES = [
-  "Goblin",
-  "Orc",
-  "Skeleton",
-  "Wolf",
-  "Spider",
-  "Bat",
-  "Rat",
-  "Slime",
-  "Bandit",
-  "Cultist",
-  "Wraith",
-  "Imp",
-  "Harpy",
-  "Troll",
-  "Ogre",
-];
-
-const ENEMY_SPECIES = ["Beast", "Undead", "Humanoid", "Demon", "Elemental", "Construct"];
-
 const TIERS: EnemyTier[] = ["WEAK", "NORMAL", "ELITE"];
 
 export interface GenerateEnemyInput {
@@ -43,14 +28,13 @@ export interface GenerateEnemyInput {
 
 /**
  * Generate 3 deterministic enemy choices (WEAK, NORMAL, ELITE).
- * Does not mutate fightCounter (preview only in Phase 1A).
+ * Species and name are picked from enemy pools using seed + fightCounter + tierIndex.
+ * Does not mutate fightCounter (preview only).
  */
 export function generateEnemyChoices(input: GenerateEnemyInput): EnemyChoice[] {
   const { seed, fightCounter, playerLevel } = input;
-  // Use seed + fightCounter so each "fight position" has stable but distinct names/species
-  const rng = createRng(seed + fightCounter * 1000);
 
-  return TIERS.map((tier, index) => {
+  return TIERS.map((tier, tierIndex) => {
     const tierMod = TIER_MODIFIER[tier];
     const level = Math.max(1, playerLevel + tierMod);
     const tierWeight = TIER_WEIGHT[tier];
@@ -58,10 +42,14 @@ export function generateEnemyChoices(input: GenerateEnemyInput): EnemyChoice[] {
     const estimatedLootCoinsMin = base * 2;
     const estimatedLootCoinsMax = base * 4;
 
-    // Deterministic name/species from tier index and RNG sequence
-    const name = rng.pick(ENEMY_NAMES);
-    const species = rng.pick(ENEMY_SPECIES);
-    const choiceId = `enemy-${seed}-${fightCounter}-${index}`;
+    const speciesRng = createRng(seed + fightCounter * 1000 + tierIndex);
+    const nameRng = createRng(seed + fightCounter * 1000 + tierIndex + 1000);
+
+    const species = speciesRng.pick(SPECIES_LIST) as EnemySpeciesId;
+    const namePool = getNamePoolForSpecies(species);
+    const name = namePool.length > 0 ? nameRng.pick(namePool) : species;
+
+    const choiceId = `enemy-${seed}-${fightCounter}-${tierIndex}`;
 
     return {
       choiceId,

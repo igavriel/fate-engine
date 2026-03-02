@@ -358,18 +358,24 @@ function GamePageInner() {
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-zinc-200">Enemies</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {enemies?.map((e) => (
+          {enemies?.map((e, index) => (
             <div
               key={e.choiceId}
-              data-testid={`enemy-card-${e.tier}`}
+              data-testid={`enemy-card-${index}`}
               className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-400">{e.tier}</span>
+                <span className="text-sm font-medium text-zinc-400" data-testid="enemy-tier">
+                  {e.tier}
+                </span>
                 <span className="text-xs text-zinc-500">Lv.{e.level}</span>
               </div>
-              <p className="mt-2 font-medium text-zinc-100">{e.name}</p>
-              <p className="text-sm text-zinc-500">{e.species}</p>
+              <p className="mt-2 font-medium text-zinc-100" data-testid="enemy-name">
+                {e.name}
+              </p>
+              <p className="text-sm text-zinc-500" data-testid="enemy-species">
+                {e.species}
+              </p>
               <p className="mt-2 text-xs text-zinc-500">
                 Loot: {e.preview.estimatedLootCoinsMin}–{e.preview.estimatedLootCoinsMax} coins
               </p>

@@ -32,4 +32,55 @@ test.describe("Game (Hub)", () => {
     await page.goto("/game?slotIndex=99");
     await expect(page.getByText(/invalid slot/i)).toBeVisible({ timeout: 1000 });
   });
+
+  test("enemy cards show tier, name, species, level from content pool", async ({ page }) => {
+    const expectedTiers = ["WEAK", "NORMAL", "ELITE"];
+    const expectedSpecies = [
+      "BANDIT",
+      "GOBLIN",
+      "SKELETON",
+      "CULTIST",
+      "WARG",
+      "TROLL",
+      "OGRE",
+      "SHADE",
+      "WARLOCK",
+      "HARPY",
+      "IMP",
+      "WRAITH",
+      "ORC",
+      "SPIDER",
+      "WOLF",
+    ];
+
+    await registerAndLogin(page, randomEmail());
+    await page.getByRole("link", { name: /new game/i }).first().click();
+    await expect(page).toHaveURL(/\/create\?slotIndex=1/);
+    await page.getByLabel(/name/i).fill("Enemy Card Hero");
+    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
+
+    await expect(page.getByTestId("enemy-card-0")).toBeVisible({ timeout: 1000 });
+    await expect(page.getByTestId("enemy-card-1")).toBeVisible();
+    await expect(page.getByTestId("enemy-card-2")).toBeVisible();
+
+    for (let i = 0; i < 3; i++) {
+      const card = page.getByTestId(`enemy-card-${i}`);
+      const tier = card.getByTestId("enemy-tier");
+      const name = card.getByTestId("enemy-name");
+      const species = card.getByTestId("enemy-species");
+
+      await expect(tier).toBeVisible();
+      await expect(name).toBeVisible();
+      await expect(species).toBeVisible();
+
+      const tierText = await tier.textContent();
+      const nameText = await name.textContent();
+      const speciesText = await species.textContent();
+
+      expect(expectedTiers).toContain(tierText?.trim());
+      expect(nameText?.trim().length).toBeGreaterThan(0);
+      expect(expectedSpecies).toContain(speciesText?.trim());
+    }
+  });
 });

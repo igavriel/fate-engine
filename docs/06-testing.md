@@ -22,3 +22,12 @@ Playwright starts the dev server unless `reuseExistingServer` is used. E2E specs
 ## Prisma 7 and tests
 
 The test client uses `@prisma/adapter-pg` in `src/server/db/prismaTest.ts` with `DATABASE_URL_TEST ?? DATABASE_URL`. Ensure `pnpm db:generate` has been run so the generated client exists.
+
+## Phase 2A coverage gate
+
+- **Script:** `scripts/check-phase2a-coverage.mjs`
+- **Run:** `pnpm test:coverage-gate` (runs `pnpm test` then the gate).
+- **Rule:** Line coverage for Phase 2A content files must be ≥ 90%:
+  - `src/domain/enemies/enemyPools.ts`
+  - `src/domain/enemies/generateEnemyChoices.ts`
+- The script reads `coverage/coverage-final.json` (produced by `pnpm test`) and exits with code 1 if any listed file is below the threshold.

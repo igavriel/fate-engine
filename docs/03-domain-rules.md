@@ -29,7 +29,18 @@
   - WEAK: tierModifier = -1
   - NORMAL: tierModifier = 0
   - ELITE: tierModifier = +1
-- Names and species are derived deterministically from seed, fightCounter, and tier index.
+- Names and species are derived deterministically from seed, fightCounter, and tier index (see Content pack v1 below).
+
+## Content pack v1: enemy species and names (Phase 2A)
+
+- **Enemy pools** (`src/domain/enemies/enemyPools.ts`): A fixed set of species (e.g. BANDIT, GOBLIN, SKELETON, CULTIST, WARG, TROLL, OGRE, SHADE, WARLOCK, HARPY, IMP, WRAITH, ORC, SPIDER, WOLF). Each species has:
+  - A **name pool** (8–20 names)
+  - Baseline stat multipliers: `hpMult`, `atkMult`, `defMult` (used when starting an encounter)
+  - Optional flavor tag (cosmetic only)
+- **Deterministic selection:**
+  - Species: `rng(seed + fightCounter * 1000 + tierIndex).pick(speciesList)` so the same run + fight + slot always yields the same species.
+  - Name: `rng(seed + fightCounter * 1000 + tierIndex + 1000).pick(namePoolForSpecies)` so the name is deterministic per species/slot.
+- **Encounter stats:** When an encounter starts, enemy HP/attack/defense are computed from level and tier (same base formula as before), then multiplied by the species’ `hpMult`, `atkMult`, `defMult` and rounded. Unknown species use multipliers 1, 1, 1.
 
 ## Enemy loot preview (Phase 1A)
 

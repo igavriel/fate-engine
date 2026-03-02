@@ -24,7 +24,12 @@ Web RPG backend and frontend.
 ## Phase 1A + 1B/1C (current)
 
 - Login → Slot Selection → Character Creation → Game Hub → Combat, inventory, run end
-- 3 save slots per user; create character in a slot; deterministic enemies (Weak/Normal/Tough) from run seed
+- 3 save slots per user; create character in a slot; deterministic enemies (Weak/Normal/Elite) from run seed
 - Combat: encounter start, action (ATTACK/HEAL/RETREAT), summary, summary/ack; run/end
 - Inventory: equip, unequip, sell, use (potion); item catalog and run inventory
 - Zod DTOs, domain RNG + enemy generation + combat + loot; Prisma models (SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment)
+
+## Content pack v1 (Phase 2A)
+
+- **Enemy pools:** 15 species (BANDIT, GOBLIN, SKELETON, etc.) with per-species name pools (8–20 names) and baseline stat multipliers. Deterministic species/name selection from seed + fightCounter + tier index.
+- **Expanded item catalog:** Seed data includes 20 weapons, 20 armors, 8 potions (idempotent upsert by name). Starter kit unchanged (Rusty Sword, Cloth Tunic, Small Potion).
