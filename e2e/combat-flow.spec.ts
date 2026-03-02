@@ -135,7 +135,7 @@ test.describe("Combat flow", () => {
     ).toBeVisible({ timeout: 2000 });
   });
 
-  test("defeat path (best-effort): TOUGH enemy until DEFEAT or skip", async ({ page }) => {
+  test("defeat path (best-effort): ELITE enemy until DEFEAT or skip", async ({ page }) => {
     const email = randomEmail();
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
@@ -151,12 +151,12 @@ test.describe("Combat flow", () => {
       await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
 
       const fightBtn = page.getByRole("button", { name: /fight/i }).first();
-      const toughCard = page.locator("div.rounded-lg").filter({ hasText: "TOUGH" }).first();
+      const eliteCard = page.getByTestId("enemy-card-ELITE").first();
       if (
-        (await toughCard.count()) > 0 &&
-        (await toughCard.getByRole("button", { name: /fight/i }).count()) > 0
+        (await eliteCard.count()) > 0 &&
+        (await eliteCard.getByRole("button", { name: /fight/i }).count()) > 0
       ) {
-        await toughCard.getByRole("button", { name: /fight/i }).click({ noWaitAfter: true });
+        await eliteCard.getByRole("button", { name: /fight/i }).click({ noWaitAfter: true });
       } else {
         await fightBtn.click({ noWaitAfter: true });
       }

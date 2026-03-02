@@ -4,13 +4,13 @@ import { createRng } from "@/domain/rng/createRng";
 const TIER_MODIFIER: Record<EnemyTier, number> = {
   WEAK: -1,
   NORMAL: 0,
-  TOUGH: 1,
+  ELITE: 1,
 };
 
 const TIER_WEIGHT: Record<EnemyTier, number> = {
   WEAK: 1,
   NORMAL: 2,
-  TOUGH: 3,
+  ELITE: 3,
 };
 
 const ENEMY_NAMES = [
@@ -33,7 +33,7 @@ const ENEMY_NAMES = [
 
 const ENEMY_SPECIES = ["Beast", "Undead", "Humanoid", "Demon", "Elemental", "Construct"];
 
-const TIERS: EnemyTier[] = ["WEAK", "NORMAL", "TOUGH"];
+const TIERS: EnemyTier[] = ["WEAK", "NORMAL", "ELITE"];
 
 export interface GenerateEnemyInput {
   seed: number;
@@ -42,7 +42,7 @@ export interface GenerateEnemyInput {
 }
 
 /**
- * Generate 3 deterministic enemy choices (WEAK, NORMAL, TOUGH).
+ * Generate 3 deterministic enemy choices (WEAK, NORMAL, ELITE).
  * Does not mutate fightCounter (preview only in Phase 1A).
  */
 export function generateEnemyChoices(input: GenerateEnemyInput): EnemyChoice[] {

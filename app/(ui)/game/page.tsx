@@ -359,7 +359,11 @@ function GamePageInner() {
         <h2 className="text-lg font-semibold text-zinc-200">Enemies</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {enemies?.map((e) => (
-            <div key={e.choiceId} className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
+            <div
+              key={e.choiceId}
+              data-testid={`enemy-card-${e.tier}`}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 p-4"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-400">{e.tier}</span>
                 <span className="text-xs text-zinc-500">Lv.{e.level}</span>

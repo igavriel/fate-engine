@@ -84,7 +84,7 @@ Returns 404 if slot missing or empty.
 - `enemies`: array of length 3.
 - Each enemy:
   - `choiceId`: string
-  - `tier`: WEAK | NORMAL | TOUGH
+  - `tier`: WEAK | NORMAL | ELITE
   - `name`: string
   - `species`: string
   - `level`: number (≥ 1)

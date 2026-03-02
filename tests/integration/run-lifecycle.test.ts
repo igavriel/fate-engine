@@ -105,8 +105,8 @@ describe("run lifecycle: status OVER and run/end", () => {
     );
     expect(enemiesRes.status).toBe(200);
     const enemiesData = (await enemiesRes.json()) as { enemies: { choiceId: string; tier: string }[] };
-    const toughChoice = enemiesData.enemies.find((e) => e.tier === "TOUGH") ?? enemiesData.enemies[2];
-    const choiceId = toughChoice!.choiceId;
+    const eliteChoice = enemiesData.enemies.find((e) => e.tier === "ELITE") ?? enemiesData.enemies[2];
+    const choiceId = eliteChoice!.choiceId;
 
     const startRes = await startEncounter(
       new Request("http://localhost/api/game/encounter/start", {

@@ -23,17 +23,17 @@
 
 ## Tier scaling
 
-- Three tiers: **WEAK**, **NORMAL**, **TOUGH**.
+- Three tiers: **WEAK**, **NORMAL**, **ELITE**.
 - **Enemy level:**  
   `enemyLevel = max(1, playerLevel + tierModifier)`
   - WEAK: tierModifier = -1
   - NORMAL: tierModifier = 0
-  - TOUGH: tierModifier = +1
+  - ELITE: tierModifier = +1
 - Names and species are derived deterministically from seed, fightCounter, and tier index.
 
 ## Enemy loot preview (Phase 1A)
 
-- `base = enemyLevel * tierWeight`, where tierWeight: WEAK = 1, NORMAL = 2, TOUGH = 3.
+- `base = enemyLevel * tierWeight`, where tierWeight: WEAK = 1, NORMAL = 2, ELITE = 3.
 - `estimatedLootCoinsMin = base * 2`, `estimatedLootCoinsMax = base * 4` (integers).
 - Actual loot logic is deferred to Phase 1B/1C.
 
@@ -51,7 +51,7 @@ Encounter and combat state are stored in `Run.stateJson` (no separate Encounter 
       "name": "string",
       "species": "string",
       "level": 1,
-      "tier": "WEAK" | "NORMAL" | "TOUGH",
+      "tier": "WEAK" | "NORMAL" | "ELITE",
       "attack": 0,
       "defense": 0
     },

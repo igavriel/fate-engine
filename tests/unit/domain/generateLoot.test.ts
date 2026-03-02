@@ -34,7 +34,7 @@ describe("generateLoot", () => {
       seed: 999,
       fightCounter: 1,
       enemyLevel: 3,
-      enemyTier: "TOUGH",
+      enemyTier: "ELITE",
       catalogIds,
     };
     const r = generateLoot(input);

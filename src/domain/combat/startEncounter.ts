@@ -4,7 +4,7 @@ import type { EnemyChoice, EnemyTier } from "@/shared/zod/game";
 const TIER_WEIGHT: Record<EnemyTier, number> = {
   WEAK: 1,
   NORMAL: 2,
-  TOUGH: 3,
+  ELITE: 3,
 };
 
 export interface EncounterEnemySnapshot {

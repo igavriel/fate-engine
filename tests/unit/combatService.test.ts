@@ -714,7 +714,7 @@ describe("combatService", () => {
                 name: "Ogre",
                 species: "Humanoid",
                 level: 2,
-                tier: "TOUGH" as const,
+                tier: "ELITE" as const,
                 attack: 15,
                 defense: 0,
               },

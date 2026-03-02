@@ -87,7 +87,7 @@ describe("create character then status and enemies", () => {
     expect(enemiesParsed.success).toBe(true);
     if (enemiesParsed.success) {
       expect(enemiesParsed.data.enemies).toHaveLength(3);
-      expect(enemiesParsed.data.enemies.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "TOUGH"]);
+      expect(enemiesParsed.data.enemies.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "ELITE"]);
     }
   });
 });

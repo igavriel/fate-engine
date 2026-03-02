@@ -3,7 +3,7 @@ import { createRng } from "@/domain/rng/createRng";
 const TIER_WEIGHT: Record<string, number> = {
   WEAK: 1,
   NORMAL: 2,
-  TOUGH: 3,
+  ELITE: 3,
 };
 
 export interface GenerateLootInput {

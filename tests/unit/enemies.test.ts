@@ -11,20 +11,20 @@ describe("generateEnemyChoices", () => {
     expect(a).toEqual(b);
   });
 
-  it("returns exactly 3 enemies with tiers WEAK, NORMAL, TOUGH", () => {
+  it("returns exactly 3 enemies with tiers WEAK, NORMAL, ELITE", () => {
     const result = generateEnemyChoices({ seed: 1, fightCounter: 0, playerLevel: 1 });
     expect(result).toHaveLength(3);
-    expect(result.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "TOUGH"]);
+    expect(result.map((e) => e.tier)).toEqual(["WEAK", "NORMAL", "ELITE"]);
   });
 
   it("enemy level scales with player level and tier", () => {
     const result = generateEnemyChoices({ seed: 1, fightCounter: 0, playerLevel: 5 });
     const weak = result.find((e) => e.tier === "WEAK")!;
     const normal = result.find((e) => e.tier === "NORMAL")!;
-    const tough = result.find((e) => e.tier === "TOUGH")!;
+    const elite = result.find((e) => e.tier === "ELITE")!;
     expect(weak.level).toBe(4); // 5 - 1
     expect(normal.level).toBe(5);
-    expect(tough.level).toBe(6); // 5 + 1
+    expect(elite.level).toBe(6); // 5 + 1
   });
 
   it("different fightCounter produces different names/species", () => {
