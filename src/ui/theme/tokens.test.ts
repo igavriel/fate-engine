@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { colors, radii, shadows, spacing } from "./tokens";
+import { typography, colors, radii, shadows, spacing } from "./tokens";
 
 describe("tokens", () => {
+  describe("typography", () => {
+    it("exports fontTitle and fontUi class names", () => {
+      expect(typography.fontTitle).toBe("font-title");
+      expect(typography.fontUi).toBe("font-ui");
+    });
+  });
+
   describe("colors", () => {
     it("exports bg, surface, border, accent, textPrimary, textMuted", () => {
       expect(colors.bg).toBeDefined();

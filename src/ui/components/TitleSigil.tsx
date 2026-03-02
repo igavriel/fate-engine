@@ -1,7 +1,10 @@
 "use client";
 
+import { typography } from "@/src/ui/theme/tokens";
+
 /**
  * Game title with a subtle rune circle (CSS/SVG). Reused on login and slots.
+ * Uses title font (Uncial Antiqua) for themed headings.
  */
 export function TitleSigil({ title }: { title: string }) {
   return (
@@ -20,7 +23,9 @@ export function TitleSigil({ title }: { title: string }) {
           <circle cx="24" cy="24" r="12" strokeOpacity="0.3" />
         </svg>
       </div>
-      <h1 className="text-center text-xl font-semibold tracking-widest text-zinc-100 uppercase">
+      <h1
+        className={`${typography.fontTitle} text-center text-xl font-semibold tracking-widest text-zinc-100 uppercase`}
+      >
         {title}
       </h1>
     </div>

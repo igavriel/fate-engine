@@ -1,7 +1,14 @@
 /**
  * Dark fantasy ruined shrine theme tokens.
- * Tailwind-first; use these for consistency across the app.
+ * Typography: --font-title (Uncial Antiqua), --font-ui (IBM Plex Sans) set in root layout.
  */
+
+export const typography = {
+  /** Title/display font (Uncial Antiqua). Use for headings and sigils. */
+  fontTitle: "font-title",
+  /** UI/body font (IBM Plex Sans). Applied to body in root layout. */
+  fontUi: "font-ui",
+} as const;
 
 export const colors = {
   bg: "bg-[#0c0a0b]",
