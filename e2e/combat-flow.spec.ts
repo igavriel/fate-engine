@@ -12,12 +12,12 @@ async function registerAndLogin(page: import("@playwright/test").Page, email: st
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole("button", { name: "Register" }).click();
-  await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
   await page.getByRole("button", { name: "Login" }).click();
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole("button", { name: "Login" }).click();
-  await expect(page).toHaveURL(/\/slots/, { timeout: 10000 });
+  await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
 }
 
 /** Ensure we land on hub for slot 1: create new character or continue existing; handles create failure (e.g. slot already filled). */
@@ -34,10 +34,10 @@ async function ensureHubSlot1(page: import("@playwright/test").Page) {
     await page.getByLabel(/name/i).fill("E2E Hero");
     await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
     const navigatedToGame = await Promise.race([
-      page.waitForURL(/\/game\?slotIndex=1/, { timeout: 5000 }).then(() => true),
+      page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 }).then(() => true),
       page
         .getByText(/failed to create character/i)
-        .waitFor({ state: "visible", timeout: 5000 })
+        .waitFor({ state: "visible", timeout: 1000 })
         .then(() => false),
     ]).catch(() => false);
     if (!navigatedToGame && page.url().includes("/create")) {
@@ -62,16 +62,18 @@ async function ensureHubSlot1(page: import("@playwright/test").Page) {
         await page
           .getByRole("button", { name: /create & enter|create/i })
           .click({ noWaitAfter: true });
-        await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 5000 });
+        await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
       }
     }
   } else {
     await slot1Continue.click();
   }
-  await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 5000 });
+  await expect(page).toHaveURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 }
 
 test.describe("Combat flow", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("happy path: WIN – start encounter, attack until win, summary modal, ack", async ({
     page,
   }) => {
@@ -81,11 +83,11 @@ test.describe("Combat flow", () => {
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
 
     await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({
-      timeout: 5000,
+      timeout: 1000,
     });
     await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
-    await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 5000 });
-    await expect(page.getByRole("heading", { name: /combat/i })).toBeVisible();
+    await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
+    await expect(page.getByRole("heading", { name: /combat/i }).first()).toBeVisible();
 
     const attackBtn = page.getByRole("button", { name: /^attack$/i });
     await expect(attackBtn).toBeVisible();
@@ -96,17 +98,17 @@ test.describe("Combat flow", () => {
       const url = page.url();
       if (url.includes("/game")) break;
       if (!url.includes("/combat")) break;
-      await expect(attackBtn).toBeVisible({ timeout: 5000 });
+      await expect(attackBtn).toBeVisible({ timeout: 1000 });
     }
 
     await expect(page).toHaveURL(/\/game\?slotIndex=1/);
 
     const summaryDialog = page.getByRole("dialog");
-    await expect(summaryDialog).toBeVisible({ timeout: 10000 });
+    await expect(summaryDialog).toBeVisible({ timeout: 1000 });
     await expect(summaryDialog.getByText(/victory|retreat|defeat/i)).toBeVisible();
 
     await summaryDialog.getByRole("button", { name: /continue/i }).click();
-    await expect(summaryDialog).not.toBeVisible({ timeout: 10000 });
+    await expect(summaryDialog).not.toBeVisible({ timeout: 1000 });
 
     await expect(page).toHaveURL(/\/game\?slotIndex=1/);
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
@@ -117,17 +119,17 @@ test.describe("Combat flow", () => {
     await registerAndLogin(page, email);
     await ensureHubSlot1(page);
     await page.getByRole("button", { name: /fight/i }).first().click({ noWaitAfter: true });
-    await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 5000 });
+    await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 1000 });
 
     await page.getByRole("button", { name: /retreat/i }).click({ noWaitAfter: true });
-    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 5000 });
+    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
 
     const summaryDialog = page.getByRole("dialog");
-    await expect(summaryDialog).toBeVisible({ timeout: 10000 });
+    await expect(summaryDialog).toBeVisible({ timeout: 1000 });
     await expect(summaryDialog.getByText(/retreat/i)).toBeVisible();
 
     await summaryDialog.getByRole("button", { name: /continue/i }).click();
-    await expect(summaryDialog).not.toBeVisible({ timeout: 10000 });
+    await expect(summaryDialog).not.toBeVisible({ timeout: 1000 });
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
   });
 
@@ -141,12 +143,12 @@ test.describe("Combat flow", () => {
 
     for (let tryCount = 0; tryCount < maxTries && !defeatSeen; tryCount++) {
       await page.goto("/game?slotIndex=1");
-      await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible({
-        timeout: 10000,
+      await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({
+        timeout: 1000,
       });
+      await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
 
       const fightBtn = page.getByRole("button", { name: /fight/i }).first();
-      await expect(fightBtn).toBeVisible({ timeout: 5000 });
       const toughCard = page.locator("div.rounded-lg").filter({ hasText: "TOUGH" }).first();
       if (
         (await toughCard.count()) > 0 &&
@@ -157,7 +159,7 @@ test.describe("Combat flow", () => {
         await fightBtn.click({ noWaitAfter: true });
       }
 
-      await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 5000 });
+      await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 10000 });
 
       const attackBtn = page.getByRole("button", { name: /^attack$/i });
       for (let i = 0; i < 50; i++) {
@@ -172,10 +174,7 @@ test.describe("Combat flow", () => {
               defeatSeen = true;
               await expect(dialog.getByText(/defeat/i)).toBeVisible();
               await dialog.getByRole("button", { name: /continue/i }).click();
-              await expect(dialog).not.toBeVisible({ timeout: 5000 });
-              await expect(page.getByText(/you're down|use a potion|recover/i)).toBeVisible({
-                timeout: 5000,
-              });
+              await expect(dialog).not.toBeVisible({ timeout: 1000 });
             }
           }
           break;

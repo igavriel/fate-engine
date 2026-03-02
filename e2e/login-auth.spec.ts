@@ -24,13 +24,13 @@ test.describe("Login", () => {
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Register" }).click({ noWaitAfter: true });
-    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
 
     await page.getByRole("button", { name: "Login" }).click();
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL(/\/slots/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
   });
 
   test("login with invalid credentials shows error", async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe("Login", () => {
     await page.getByLabel(/email/i).fill("nonexistent@test.local");
     await page.getByLabel(/password/i).fill("wrongpassword");
     await page.getByRole("button", { name: "Login" }).click();
-    await expect(page.getByText(/invalid|incorrect|failed|error/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/invalid|incorrect|failed|error/i)).toBeVisible({ timeout: 1000 });
     await expect(page).toHaveURL(/\/login/);
   });
 });

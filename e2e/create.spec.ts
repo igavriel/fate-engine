@@ -14,12 +14,12 @@ test.describe("Create character", () => {
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Register" }).click({ noWaitAfter: true });
-    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
     await page.getByRole("button", { name: "Login" }).click();
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL(/\/slots/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
 
     await page.getByRole("link", { name: /new game/i }).first().click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
@@ -38,18 +38,18 @@ test.describe("Create character", () => {
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Register" }).click({ noWaitAfter: true });
-    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
     await page.getByRole("button", { name: "Login" }).click();
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL(/\/slots/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
 
     await page.getByRole("link", { name: /new game/i }).first().click();
     await expect(page).toHaveURL(/\/create\?slotIndex=1/);
     await page.getByLabel(/name/i).fill("E2E Hero");
     await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
-    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 5000 });
+    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
     await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
   });
 
@@ -62,14 +62,14 @@ test.describe("Create character", () => {
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Register" }).click({ noWaitAfter: true });
-    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/registered|log in now/i)).toBeVisible({ timeout: 1000 });
     await page.getByRole("button", { name: "Login" }).click();
     await page.getByLabel(/email/i).fill(email);
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: "Login" }).click();
-    await expect(page).toHaveURL(/\/slots/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
 
     await page.goto("/create?slotIndex=99");
-    await expect(page.getByText(/invalid|choose from slot 1/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/invalid|choose from slot 1/i)).toBeVisible({ timeout: 1000 });
   });
 });
