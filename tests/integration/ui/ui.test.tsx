@@ -4,7 +4,7 @@ import React from "react";
 import { OmenCard } from "@/src/ui/components/OmenCard";
 import { HpBar } from "@/src/ui/components/HpBar";
 
-describe("Phase 3B UI integration (server render)", () => {
+describe("UI integration (server render)", () => {
   it("hub omen cards include testids and ELITE has elite class", () => {
     const enemies = [
       {
