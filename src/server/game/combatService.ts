@@ -300,6 +300,8 @@ export async function applyAction(
             attackBonus: true,
             defenseBonus: true,
             healPercent: true,
+            requiredLevel: true,
+            powerScore: true,
           },
         });
         const catalogItems = catalogRows.map((c) => ({
@@ -308,12 +310,15 @@ export async function applyAction(
           attackBonus: c.attackBonus,
           defenseBonus: c.defenseBonus,
           healPercent: c.healPercent,
+          requiredLevel: c.requiredLevel,
+          powerScore: c.powerScore,
         }));
         const lootResult = computeLoot({
           seed: run.seed,
           fightCounter: run.fightCounter - 1,
           enemyLevel: enemySnapshot.level,
           enemyTier: enemySnapshot.tier,
+          playerLevel: character.level,
           catalogItems,
         });
 
@@ -350,6 +355,7 @@ export async function applyAction(
               attackBonus: catalog?.attackBonus,
               defenseBonus: catalog?.defenseBonus,
               healPercent: catalog?.healPercent,
+              requiredLevel: catalog?.requiredLevel,
             };
           })
         );

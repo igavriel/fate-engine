@@ -439,6 +439,11 @@ function GamePageInner() {
                           <span>+{item.catalog.defenseBonus} Defense</span>
                         )}
                         {isPotion && <span>Heal {item.catalog.healPercent}%</span>}
+                        {isWeaponOrArmor && item.catalog.requiredLevel != null && (
+                          <span data-testid="item-required-level">
+                            Requires Level {item.catalog.requiredLevel}
+                          </span>
+                        )}
                         <span>×{item.quantity}</span>
                         <span>Sell: {item.catalog.sellValueCoins * item.quantity} coins</span>
                       </div>
@@ -452,19 +457,31 @@ function GamePageInner() {
                       {isWeaponOrArmor && (
                         <>
                           {!isEquipped ? (
-                            <button
-                              type="button"
-                              disabled={pending}
-                              onClick={() =>
-                                handleEquip(
-                                  item.id,
-                                  item.catalog.itemType === "WEAPON" ? "weapon" : "armor"
-                                )
-                              }
-                              className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
-                            >
-                              Equip
-                            </button>
+                            (() => {
+                              const reqLevel = item.catalog.requiredLevel ?? 1;
+                              const belowLevel =
+                                reqLevel > 1 && run.level < reqLevel;
+                              return (
+                                <button
+                                  type="button"
+                                  disabled={pending || belowLevel}
+                                  title={
+                                    belowLevel
+                                      ? `Requires level ${reqLevel} (you are level ${run.level})`
+                                      : undefined
+                                  }
+                                  onClick={() =>
+                                    handleEquip(
+                                      item.id,
+                                      item.catalog.itemType === "WEAPON" ? "weapon" : "armor"
+                                    )
+                                  }
+                                  className="rounded bg-zinc-600 px-3 py-1.5 text-sm text-zinc-100 hover:bg-zinc-500 disabled:opacity-50"
+                                >
+                                  {belowLevel ? `Equip (Lv.${reqLevel})` : "Equip"}
+                                </button>
+                              );
+                            })()
                           ) : (
                             <button
                               type="button"

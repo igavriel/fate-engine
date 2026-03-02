@@ -1,5 +1,5 @@
 /**
- * Run.stateJson shape for Phase 1C combat.
+ * Run.stateJson shape for combat.
  * See docs/03-domain-rules.md for full schema.
  */
 
@@ -45,6 +45,7 @@ export interface RunStateSummaryLootItem {
   attackBonus?: number;
   defenseBonus?: number;
   healPercent?: number;
+  requiredLevel?: number;
 }
 
 export interface RunStateSummary {

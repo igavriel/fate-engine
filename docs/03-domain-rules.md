@@ -6,7 +6,7 @@
 - A seeded PRNG (Mulberry32) is used so that the same seed produces the same sequence of values.
 - This allows reproducible runs and fair replay/verification.
 
-### RNG usage (Phase 1C)
+### RNG usage
 
 - **Action RNG:** Use `rng(seed + turnCounter)` for combat actions (damage roll, etc.); increment `turnCounter` by 1 per action (ATTACK, HEAL, RETREAT).
 - **Encounter RNG:** Use `rng(seed + fightCounter)` when starting an encounter; increment `fightCounter` **once** when the encounter starts (not when fetching enemy preview).
@@ -14,12 +14,12 @@
 
 ## Seed + fightCounter for enemies
 
-- **Run** has: `seed` (set at run creation) and `fightCounter` (number of fights started; Phase 1A preview does **not** increment it).
+- **Run** has: `seed` (set at run creation) and `fightCounter`.
 - Enemy choices are generated from:  
   `f(seed, fightCounter, playerLevel, tierIndex)`  
   so that:
   - Same run + same fightCounter + same level → same 3 enemies.
-  - Advancing to the next fight (Phase 1C) increments `fightCounter`, so the next set of enemies can differ.
+  - Advancing to the next fight increments `fightCounter`, so the next set of enemies can differ.
 
 ## Tier scaling
 
@@ -31,7 +31,7 @@
   - ELITE: tierModifier = +1
 - Names and species are derived deterministically from seed, fightCounter, and tier index (see Content pack v1 below).
 
-## Content pack v1: enemy species and names (Phase 2A)
+## Content pack v1: enemy species and names
 
 - **Enemy pools** (`src/domain/enemies/enemyPools.ts`): A fixed set of species (e.g. BANDIT, GOBLIN, SKELETON, CULTIST, WARG, TROLL, OGRE, SHADE, WARLOCK, HARPY, IMP, WRAITH, ORC, SPIDER, WOLF). Each species has:
   - A **name pool** (8–20 names)
@@ -42,13 +42,12 @@
   - Name: `rng(seed + fightCounter * 1000 + tierIndex + 1000).pick(namePoolForSpecies)` so the name is deterministic per species/slot.
 - **Encounter stats:** When an encounter starts, enemy HP/attack/defense are computed from level and tier (same base formula as before), then multiplied by the species’ `hpMult`, `atkMult`, `defMult` and rounded. Unknown species use multipliers 1, 1, 1.
 
-## Enemy loot preview (Phase 1A)
+## Enemy loot preview
 
 - `base = enemyLevel * tierWeight`, where tierWeight: WEAK = 1, NORMAL = 2, ELITE = 3.
 - `estimatedLootCoinsMin = base * 2`, `estimatedLootCoinsMax = base * 4` (integers).
-- Actual loot logic is in Phase 2B (deterministic loot tables).
 
-## Deterministic loot (Phase 2B)
+## Deterministic loot
 
 Rewards on WIN are deterministic: same `seed`, `fightCounter`, enemy tier/level → same coins and same drop/no-drop.
 
@@ -71,9 +70,9 @@ So WEAK gives slightly more coins per level, ELITE gives the most (1.4×). Defea
 
 If a drop occurs, one item is chosen from the catalog via `selectDropItem` (tier-biased power cap: WEAK ≤2, NORMAL ≤3, ELITE ≤5 power score). Item type is weighted 50% weapon, 35% armor, 15% potion. `fightCounter` is **not** mutated on WIN; it increments only when an encounter starts.
 
-## Run.stateJson (Phase 1C)
+## Run.stateJson
 
-Encounter and combat state are stored in `Run.stateJson` (no separate Encounter table in Phase 1C1). Shape:
+Encounter and combat state are stored in `Run.stateJson` Shape:
 
 ```json
 {

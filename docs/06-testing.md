@@ -1,42 +1,58 @@
 # Testing
 
-## Unit and integration (Vitest)
+General rules and setup for testing the Fate Engine. The project uses **Vitest** for unit and integration tests and **Playwright** for end-to-end tests.
+
+---
+
+## Principles
+
+- **Domain logic** lives in `src/domain/` and is covered by **unit tests** under `tests/unit/`. No DB required for pure domain code.
+- **Route handlers and server services** are tested via **unit tests** (mocked `Request` / dependencies) or **integration tests** (real DB when needed). Integration tests live under `tests/integration/`.
+- **Line coverage** for in-scope source files should be **≥ 90%**. Run coverage with `pnpm test` and fix regressions.
+- **E2E tests** in `e2e/` exercise full flows in the browser; they require the app to run (dev server started by Playwright unless configured otherwise).
+
+---
+
+## Unit and integration tests (Vitest)
+
+**Commands**
 
 - **Run once with coverage:** `pnpm test`
-- **Watch mode:** `pnpm test:watch`
+- **Watch mode:** `pnpm exec vitest` (no `run`; re-runs on file changes)
 
-Tests live under `tests/`:
+**Layout**
 
-- `tests/unit/` — env, logger, RNG determinism, enemy generation, domain (combat, progression, loot).
-- `tests/integration/` — API route handlers (db-check, game/slots, character/create, status, enemies, combat flow, run lifecycle). Tests call route handlers with mocked Request; tests that need DB use the test Prisma client (`prismaTest`) and require a real `DATABASE_URL` (or `DATABASE_URL_TEST`).
+| Directory | Purpose |
+|-----------|---------|
+| `tests/unit/` | Unit tests: domain, env, logger, RNG, auth, HTTP helpers, services with mocks. No DB unless the test explicitly uses the test DB. |
+| `tests/unit/domain/` | Domain logic: combat, progression, loot, enemies, stats, etc. |
+| `tests/unit/app/` | Route handlers in isolation: mock `Request`, assert response shape and status. |
+| `tests/integration/` | Tests that hit the real API with a test DB: slots, character create, status, enemies, combat flow, run lifecycle, inventory, win/loot. Use `prismaTest` and require a real Postgres `DATABASE_URL` (or `DATABASE_URL_TEST`). |
 
-Env for tests: set `DATABASE_URL` (and optionally `DATABASE_URL_TEST`) in `.env.test` or in CI. `tests/setup.ts` sets fallbacks for missing `DATABASE_URL` and `JWT_SECRET` so unit tests can run; integration tests that hit the DB need a real Postgres URL.
+**Environment**
 
-## E2E (Playwright)
+- Set `DATABASE_URL` (and optionally `DATABASE_URL_TEST`) in `.env.test` or in CI.
+- `tests/setup.ts` sets fallbacks for `DATABASE_URL` and `JWT_SECRET` so unit tests can run without a real DB; integration tests that use the DB need a valid Postgres URL.
+
+---
+
+## E2E tests (Playwright)
 
 - **Run:** `pnpm e2e`
 - **With UI:** `pnpm exec playwright test --ui`
 
-Playwright starts the dev server unless `reuseExistingServer` is used. E2E specs are in `e2e/` (e.g. login, flows).
+Specs live in `e2e/`. Playwright starts the dev server by default unless `reuseExistingServer` is used. Use E2E for critical user flows (e.g. login, game flows).
 
-## Prisma 7 and tests
+---
 
-The test client uses `@prisma/adapter-pg` in `src/server/db/prismaTest.ts` with `DATABASE_URL_TEST ?? DATABASE_URL`. Ensure `pnpm db:generate` has been run so the generated client exists.
+## Database and Prisma
 
-## Phase 2A coverage gate
+- The test client uses `@prisma/adapter-pg` in `src/server/db/prismaTest.ts` with `DATABASE_URL_TEST ?? DATABASE_URL`.
+- Run `pnpm db:generate` so the generated Prisma client exists before running tests.
 
-- **Script:** `scripts/check-phase2a-coverage.mjs`
-- **Run:** `pnpm test:coverage-gate` (runs `pnpm test` then the gate).
-- **Rule:** Line coverage for Phase 2A content files must be ≥ 90%:
-  - `src/domain/enemies/enemyPools.ts`
-  - `src/domain/enemies/generateEnemyChoices.ts`
-- The script reads `coverage/coverage-final.json` (produced by `pnpm test`) and exits with code 1 if any listed file is below the threshold.
+---
 
-## Phase 2B coverage gate (loot)
+## Coverage
 
-- **Script:** `scripts/check-phase2b-coverage.mjs`
-- **Run:** `node scripts/check-phase2b-coverage.mjs` after `pnpm test` (or add to CI).
-- **Rule:** Line coverage for Phase 2B loot files must be ≥ 90%:
-  - `src/domain/loot/lootTables.ts`
-  - `src/domain/loot/selectDropItem.ts`
-- The script reads `coverage/coverage-final.json` and exits with code 1 if any listed file is below the threshold.
+- `pnpm test` runs Vitest with `--coverage` and writes reports (e.g. `coverage/`).
+- Aim for **≥ 90% line coverage** on domain and server code in scope for the current work. Fix or justify any drop below that threshold.

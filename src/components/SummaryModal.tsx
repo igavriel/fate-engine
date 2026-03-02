@@ -34,7 +34,7 @@ export function SummaryModal({
       data-testid="summary-modal"
     >
       <div className="w-full max-w-md rounded-lg border border-zinc-600 bg-zinc-900 p-6 shadow-xl">
-        <h2 id="summary-title" className={`text-xl font-bold ${outcomeColor}`}>
+        <h2 id="summary-title" data-testid="summary-title" className={`text-xl font-bold ${outcomeColor}`}>
           {outcomeLabel}
         </h2>
         <p className="mt-1 text-sm text-zinc-400">
@@ -63,6 +63,16 @@ export function SummaryModal({
                   {(item.attackBonus ?? 0) > 0 && ` (+${item.attackBonus} ATK)`}
                   {(item.defenseBonus ?? 0) > 0 && ` (+${item.defenseBonus} DEF)`}
                   {(item.healPercent ?? 0) > 0 && ` (Heal ${item.healPercent}%)`}
+                  {(item.itemType === "WEAPON" || item.itemType === "ARMOR") &&
+                    item.requiredLevel != null && (
+                      <span
+                        className="text-zinc-500"
+                        data-testid="summary-loot-required-level"
+                      >
+                        {" "}
+                        · Requires Level {item.requiredLevel}
+                      </span>
+                    )}
                 </li>
               ))}
             </ul>

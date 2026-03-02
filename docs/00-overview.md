@@ -13,7 +13,7 @@ Web RPG backend and frontend.
 - **Tests:** Vitest (unit/integration), Playwright (e2e)
 - **Package manager:** pnpm
 
-## Phase 0 (done)
+## Phase 0
 
 - Next.js + Tailwind + TypeScript scaffold
 - Prisma + migrations (AppConfig, User)
@@ -21,7 +21,7 @@ Web RPG backend and frontend.
 - Minimal UI: home, login/register
 - Local and Vercel DB connectivity verification
 
-## Phase 1A + 1B/1C (current)
+## Phase 1
 
 - Login → Slot Selection → Character Creation → Game Hub → Combat, inventory, run end
 - 3 save slots per user; create character in a slot; deterministic enemies (Weak/Normal/Elite) from run seed
@@ -29,7 +29,7 @@ Web RPG backend and frontend.
 - Inventory: equip, unequip, sell, use (potion); item catalog and run inventory
 - Zod DTOs, domain RNG + enemy generation + combat + loot; Prisma models (SaveSlot, Character, Run, CharacterStats, ItemCatalog, RunInventoryItem, RunEquipment)
 
-## Content pack v1 (Phase 2A)
+## Phase 2 - Content pack
 
 - **Enemy pools:** 15 species (BANDIT, GOBLIN, SKELETON, etc.) with per-species name pools (8–20 names) and baseline stat multipliers. Deterministic species/name selection from seed + fightCounter + tier index.
 - **Expanded item catalog:** Seed data includes 20 weapons, 20 armors, 8 potions (idempotent upsert by name). Starter kit unchanged (Rusty Sword, Cloth Tunic, Small Potion).

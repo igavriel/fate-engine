@@ -87,4 +87,25 @@ describe("resolveCombatAction", () => {
       resolveCombatAction({ ...baseInput, action: "RETREAT", turnCounter: 2 }).nextTurnCounter
     ).toBe(3);
   });
+
+  it("ATTACK with enemy at 1 HP and damage >= 1 yields WIN (enemy defeated)", () => {
+    const result = resolveCombatAction({
+      ...baseInput,
+      encounter: { ...baseEncounter, enemyHp: 1 },
+      playerAttack: 5,
+    });
+    expect(result.outcome).toBe("WIN");
+    expect(result.enemyHpAfter).toBe(0);
+    expect(result.hpDelta).toBe(0);
+  });
+
+  it("ATTACK with enemyHp as number 0 or string/coerced still yields WIN when damage defeats", () => {
+    const result = resolveCombatAction({
+      ...baseInput,
+      encounter: { ...baseEncounter, enemyHp: "1" as unknown as number },
+      playerAttack: 5,
+    });
+    expect(result.outcome).toBe("WIN");
+    expect(result.enemyHpAfter).toBe(0);
+  });
 });

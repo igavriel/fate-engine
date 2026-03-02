@@ -1,5 +1,5 @@
 /**
- * Integration tests for Phase 2B: WIN outcome applies deterministic loot (coins + optional item).
+ * Integration tests: WIN outcome applies deterministic loot (coins + optional item).
  * - WIN flow: summary outcome WIN, coinsGained > 0, loot array (0 or 1 item); inventory updated if drop.
  * - Deterministic tier bias (ELITE vs WEAK drop rate) is covered by unit tests in lootTables.test.ts.
  */
@@ -17,6 +17,7 @@ import { GET as getInventory } from "@/app/api/game/inventory/route";
 import { prismaTest } from "@/server/db/prismaTest";
 import { hashPassword } from "@/server/auth/password";
 import { signToken } from "@/server/auth/jwt";
+import { computeLoot } from "@/domain/loot/lootTables";
 import {
   summaryResponseSchema,
   inventoryWithStatusResponseSchema,
@@ -54,7 +55,7 @@ async function attackUntilOutcome(
   return "TIMEOUT";
 }
 
-describe("WIN loot integration (Phase 2B)", () => {
+describe("WIN loot integration", () => {
   let authCookie: string;
   const slotIndex = 1 as const;
 
@@ -212,6 +213,8 @@ describe("WIN loot integration (Phase 2B)", () => {
         attackBonus: true,
         defenseBonus: true,
         healPercent: true,
+        requiredLevel: true,
+        powerScore: true,
       },
     });
     const catalogItems = catalogRows.map((c) => ({
@@ -220,17 +223,21 @@ describe("WIN loot integration (Phase 2B)", () => {
       attackBonus: c.attackBonus,
       defenseBonus: c.defenseBonus,
       healPercent: c.healPercent,
+      requiredLevel: c.requiredLevel,
+      powerScore: c.powerScore,
     }));
 
     let eliteDrops = 0;
     let weakDrops = 0;
     const enemyLevel = 2;
+    const playerLevel = 5;
     for (let fc = 1; fc <= 10; fc++) {
       const eliteResult = computeLoot({
         seed,
         fightCounter: fc,
         enemyLevel,
         enemyTier: "ELITE",
+        playerLevel,
         catalogItems,
       });
       const weakResult = computeLoot({
@@ -238,11 +245,100 @@ describe("WIN loot integration (Phase 2B)", () => {
         fightCounter: fc,
         enemyLevel,
         enemyTier: "WEAK",
+        playerLevel,
         catalogItems,
       });
       if (eliteResult.itemDrops.length > 0) eliteDrops++;
       if (weakResult.itemDrops.length > 0) weakDrops++;
     }
     expect(eliteDrops).toBeGreaterThanOrEqual(weakDrops);
+  });
+
+  it("at level 1 dropped items have requiredLevel <= 1; after level 6 higher requiredLevel items can appear", async () => {
+    if (!hasRealDb) return;
+
+    await getSlots(
+      new Request("http://localhost/api/game/slots", { headers: { Cookie: authCookie } })
+    );
+    const createRes = await createCharacter(
+      new Request("http://localhost/api/game/character/create", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex, name: "LevelDropHero", species: "HUMAN" }),
+      })
+    );
+    expect(createRes.status).toBe(200);
+
+    const character = await prismaTest.character.findFirst({
+      where: { name: "LevelDropHero" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(character).toBeDefined();
+    const run = await prismaTest.run.findFirst({
+      where: { characterId: character!.id },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(run).toBeDefined();
+
+    const catalogRows = await prismaTest.itemCatalog.findMany({
+      select: {
+        id: true,
+        itemType: true,
+        attackBonus: true,
+        defenseBonus: true,
+        healPercent: true,
+        requiredLevel: true,
+        powerScore: true,
+      },
+    });
+    const catalogItems = catalogRows.map((c) => ({
+      id: c.id,
+      itemType: c.itemType as "WEAPON" | "ARMOR" | "POTION",
+      attackBonus: c.attackBonus,
+      defenseBonus: c.defenseBonus,
+      healPercent: c.healPercent,
+      requiredLevel: c.requiredLevel,
+      powerScore: c.powerScore,
+    }));
+
+    for (let fc = 0; fc < 15; fc++) {
+      const result = computeLoot({
+        seed: run!.seed,
+        fightCounter: fc,
+        enemyLevel: 2,
+        enemyTier: "ELITE",
+        playerLevel: 1,
+        catalogItems,
+      });
+      for (const drop of result.itemDrops) {
+        const item = catalogItems.find((c) => c.id === drop.itemCatalogId);
+        expect(item).toBeDefined();
+        expect(item!.requiredLevel).toBeLessThanOrEqual(1);
+      }
+    }
+
+    await prismaTest.character.update({
+      where: { id: character!.id },
+      data: { level: 6 },
+    });
+
+    let sawHigherLevelItem = false;
+    for (let fc = 20; fc < 35; fc++) {
+      const result = computeLoot({
+        seed: run!.seed,
+        fightCounter: fc,
+        enemyLevel: 3,
+        enemyTier: "ELITE",
+        playerLevel: 6,
+        catalogItems,
+      });
+      for (const drop of result.itemDrops) {
+        const item = catalogItems.find((c) => c.id === drop.itemCatalogId);
+        expect(item).toBeDefined();
+        expect(item!.requiredLevel).toBeLessThanOrEqual(6);
+        if (item!.requiredLevel > 1) sawHigherLevelItem = true;
+      }
+    }
+    expect(sawHigherLevelItem).toBe(true);
   });
 });

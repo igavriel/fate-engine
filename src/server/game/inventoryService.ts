@@ -17,6 +17,8 @@ export type InventoryItemRow = {
     defenseBonus: number;
     healPercent: number;
     sellValueCoins: number;
+    requiredLevel?: number;
+    powerScore?: number;
   };
 };
 
@@ -47,6 +49,8 @@ export async function getInventory(
       defenseBonus: r.itemCatalog.defenseBonus,
       healPercent: r.itemCatalog.healPercent,
       sellValueCoins: r.itemCatalog.sellValueCoins,
+      requiredLevel: r.itemCatalog.requiredLevel,
+      powerScore: r.itemCatalog.powerScore,
     },
   }));
 }

@@ -18,6 +18,18 @@ type SeedItem = {
   sellValueCoins: number;
 };
 
+function powerScoreForSeed(item: SeedItem): number {
+  if (item.itemType === "POTION") return Math.ceil(item.healPercent / 25);
+  return Math.max(item.attackBonus, item.defenseBonus);
+}
+
+/** Bracket requiredLevel by powerScore: starter (1-2) -> 1, then 3,5,8,10,12 */
+function requiredLevelForPower(power: number): number {
+  if (power <= 2) return 1;
+  const brackets = [1, 1, 3, 5, 8, 10, 12];
+  return brackets[Math.min(power - 1, brackets.length - 1)] ?? 12;
+}
+
 const SEED_ITEMS: SeedItem[] = [
   // --- Weapons (starter + expanded) ---
   { name: "Rusty Sword", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25, sellValueCoins: 5 },
@@ -74,15 +86,23 @@ const SEED_ITEMS: SeedItem[] = [
 
 async function main() {
   for (const item of SEED_ITEMS) {
+    const power = powerScoreForSeed(item);
+    const requiredLevel = requiredLevelForPower(power);
     await prisma.itemCatalog.upsert({
       where: { name: item.name },
-      create: item,
+      create: {
+        ...item,
+        requiredLevel,
+        powerScore: power,
+      },
       update: {
         itemType: item.itemType,
         attackBonus: item.attackBonus,
         defenseBonus: item.defenseBonus,
         healPercent: item.healPercent,
         sellValueCoins: item.sellValueCoins,
+        requiredLevel,
+        powerScore: power,
       },
     });
   }

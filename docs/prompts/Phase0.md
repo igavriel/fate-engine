@@ -91,7 +91,6 @@ Also create:
 
 - README.md
 - .env.example
-- .env.test.example
 - .gitignore
 
 ---
@@ -163,12 +162,7 @@ Required vars:
 - LOG_LEVEL (default info)
 - LOG_PRETTY (default true)
 
-Optional for now:
-
-- NODE_ENV
-
 Create .env.example including placeholders.
-Create .env.test.example with safe defaults (can point to same DB for now).
 
 ---
 
@@ -276,15 +270,6 @@ Implement README instructions and a script:
 
 - `pnpm env:dev -- pnpm dev` uses .env locally.
 - In README, explain that user should copy the Neon/Vercel DATABASE_URL into local .env to point local dev to the Vercel DB.
-
-Also implement a CLI script:
-
-- scripts/dbCheck.ts (node) that imports prisma client and runs the same upsert as /api/db-check, then prints success.
-  Add script:
-- "db:check": "tsx scripts/dbCheck.ts" OR plain node ts compiled; choose simplest.
-  If you use tsx, add it as dev dependency.
-
-NOTE: The goal is: local machine can run `pnpm db:check` and see it update the Vercel DB.
 
 ---
 

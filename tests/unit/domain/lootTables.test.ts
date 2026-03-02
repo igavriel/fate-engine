@@ -1,12 +1,38 @@
 import { describe, it, expect } from "vitest";
 import { computeLoot, COIN_TIER_MULTIPLIER, DROP_CHANCE_THRESHOLD } from "@/domain/loot/lootTables";
-import type { CatalogItemForLoot } from "@/domain/loot/selectDropItem";
+import type { CatalogItemForFilter } from "@/domain/loot/filterCatalogForDrop";
 
-const catalogItems: CatalogItemForLoot[] = [
-  { id: "w1", itemType: "WEAPON", attackBonus: 2, defenseBonus: 0, healPercent: 25 },
-  { id: "a1", itemType: "ARMOR", attackBonus: 0, defenseBonus: 2, healPercent: 25 },
-  { id: "p1", itemType: "POTION", attackBonus: 0, defenseBonus: 0, healPercent: 50 },
+const catalogItems: CatalogItemForFilter[] = [
+  {
+    id: "w1",
+    itemType: "WEAPON",
+    attackBonus: 2,
+    defenseBonus: 0,
+    healPercent: 25,
+    requiredLevel: 1,
+    powerScore: 2,
+  },
+  {
+    id: "a1",
+    itemType: "ARMOR",
+    attackBonus: 0,
+    defenseBonus: 2,
+    healPercent: 25,
+    requiredLevel: 1,
+    powerScore: 2,
+  },
+  {
+    id: "p1",
+    itemType: "POTION",
+    attackBonus: 0,
+    defenseBonus: 0,
+    healPercent: 50,
+    requiredLevel: 1,
+    powerScore: 2,
+  },
 ];
+
+const playerLevel = 5;
 
 describe("lootTables", () => {
   describe("coins determinism", () => {
@@ -16,6 +42,7 @@ describe("lootTables", () => {
         fightCounter: 0,
         enemyLevel: 3,
         enemyTier: "NORMAL" as const,
+        playerLevel,
         catalogItems,
       };
       const r1 = computeLoot(input);
@@ -31,6 +58,7 @@ describe("lootTables", () => {
         fightCounter: 0,
         enemyLevel: 2,
         enemyTier: "ELITE" as const,
+        playerLevel,
         catalogItems,
       };
       const r = computeLoot(input);
@@ -58,6 +86,7 @@ describe("lootTables", () => {
         fightCounter: 1,
         enemyLevel: 2,
         enemyTier: "ELITE" as const,
+        playerLevel,
         catalogItems,
       };
       const r1 = computeLoot(input);
@@ -66,9 +95,9 @@ describe("lootTables", () => {
     });
 
     it("drop thresholds: WEAK 25, NORMAL 40, ELITE 65", () => {
-      expect(DROP_CHANCE_THRESHOLD.WEAK).toBe(25);
-      expect(DROP_CHANCE_THRESHOLD.NORMAL).toBe(40);
-      expect(DROP_CHANCE_THRESHOLD.ELITE).toBe(65);
+      expect(DROP_CHANCE_THRESHOLD.WEAK).toBe(65);
+      expect(DROP_CHANCE_THRESHOLD.NORMAL).toBe(70);
+      expect(DROP_CHANCE_THRESHOLD.ELITE).toBe(85);
     });
 
     it("with empty catalog returns no item drops", () => {
@@ -77,6 +106,7 @@ describe("lootTables", () => {
         fightCounter: 0,
         enemyLevel: 1,
         enemyTier: "NORMAL",
+        playerLevel: 1,
         catalogItems: [],
       });
       expect(r.itemDrops).toHaveLength(0);
@@ -96,6 +126,7 @@ describe("lootTables", () => {
           fightCounter: fc,
           enemyLevel,
           enemyTier: "WEAK",
+          playerLevel: 5,
           catalogItems,
         });
         const elite = computeLoot({
@@ -103,6 +134,7 @@ describe("lootTables", () => {
           fightCounter: fc,
           enemyLevel,
           enemyTier: "ELITE",
+          playerLevel: 5,
           catalogItems,
         });
         if (weak.itemDrops.length > 0) weakDrops++;
@@ -121,6 +153,7 @@ describe("lootTables", () => {
           fightCounter: 0,
           enemyLevel: 2,
           enemyTier: "ELITE",
+          playerLevel,
           catalogItems,
         });
         if (r.itemDrops.length > 0) {

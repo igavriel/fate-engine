@@ -88,7 +88,7 @@ test.describe("Combat flow", () => {
     await expect(summaryDialog).toBeVisible({ timeout: 1000 });
     await expect(summaryDialog.getByText(/victory|retreat|defeat/i)).toBeVisible();
 
-    // Phase 2B: summary shows coins gained and loot section (item or "No items found")
+    // Summary shows coins gained and loot section (item or "No items found")
     const summaryModal = page.getByTestId("summary-modal");
     await expect(summaryModal).toBeVisible({ timeout: 1000 });
     await expect(summaryModal.getByText(/coins:/i)).toBeVisible();
@@ -155,28 +155,48 @@ test.describe("Combat flow", () => {
 
     for (let tryCount = 0; tryCount < maxTries && !defeatSeen; tryCount++) {
       await page.goto("/game?slotIndex=1");
-      await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({
-        timeout: 1000,
+      await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible({
+        timeout: 5000,
       });
-      await expect(page.getByRole("heading", { name: /game hub/i })).toBeVisible();
 
+      // Dismiss any open summary from a previous combat so Fight buttons become enabled
+      const summaryDialog = page.getByRole("dialog");
+      if (await summaryDialog.isVisible()) {
+        await summaryDialog.getByRole("button", { name: /continue/i }).click();
+        await expect(summaryDialog).not.toBeVisible({ timeout: 2000 });
+      }
+
+      // Wait for an enabled Fight button (they are disabled while summary is open)
       const fightBtn = page.getByRole("button", { name: /fight/i }).first();
-      const eliteCard = page.getByTestId("enemy-card-ELITE").first();
-      if (
-        (await eliteCard.count()) > 0 &&
-        (await eliteCard.getByRole("button", { name: /fight/i }).count()) > 0
-      ) {
+      await expect(fightBtn).toBeEnabled({ timeout: 2000 });
+
+      // Prefer ELITE enemy when present; cards are enemy-card-0, enemy-card-1, ...
+      const eliteCard = page
+        .locator("[data-testid^=enemy-card-]")
+        .filter({ has: page.getByTestId("enemy-tier").filter({ hasText: /^ELITE$/i }) })
+        .first();
+      if ((await eliteCard.count()) > 0) {
         await eliteCard.getByRole("button", { name: /fight/i }).click({ noWaitAfter: true });
       } else {
         await fightBtn.click({ noWaitAfter: true });
       }
 
+      // Either we navigated to combat, or we have ENCOUNTER_ACTIVE and must click "Go to Combat"
+      const combatLink = page.getByRole("link", { name: /go to combat/i });
+      if (await combatLink.isVisible().catch(() => false)) {
+        await combatLink.click();
+      }
       await page.waitForURL(/\/combat\?slotIndex=1/, { timeout: 10000 });
 
       const attackBtn = page.getByRole("button", { name: /^attack$/i });
       for (let i = 0; i < 50; i++) {
         await attackBtn.click();
-        await page.waitForTimeout(200);
+        // Wait for either navigation to game (combat ended) or 400ms – avoids sending another
+        // action after WIN/DEFEAT/RETREAT and getting 409 SUMMARY_PENDING (stuck on combat).
+        await Promise.race([
+          page.waitForURL(/\/game\?slotIndex=1/, { timeout: 5000 }),
+          page.waitForTimeout(400),
+        ]);
         const url = page.url();
         if (url.includes("/game")) {
           const dialog = page.getByRole("dialog");
@@ -185,6 +205,10 @@ test.describe("Combat flow", () => {
             if (text?.toLowerCase().includes("defeat")) {
               defeatSeen = true;
               await expect(dialog.getByText(/defeat/i)).toBeVisible();
+              await dialog.getByRole("button", { name: /continue/i }).click();
+              await expect(dialog).not.toBeVisible({ timeout: 1000 });
+            } else {
+              // Dismiss Victory/Retreat so next try starts clean
               await dialog.getByRole("button", { name: /continue/i }).click();
               await expect(dialog).not.toBeVisible({ timeout: 1000 });
             }

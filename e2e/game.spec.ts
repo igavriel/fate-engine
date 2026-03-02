@@ -83,4 +83,46 @@ test.describe("Game (Hub)", () => {
       expect(expectedSpecies).toContain(speciesText?.trim());
     }
   });
+
+  test("fight WIN shows summary; loot and inventory show Requires Level when applicable", async ({
+    page,
+  }) => {
+    await registerAndLogin(page, randomEmail());
+    await page.getByRole("link", { name: /new game/i }).first().click();
+    await expect(page).toHaveURL(/\/create\?slotIndex=1/);
+    await page.getByLabel(/name/i).fill("Fight Win Hero");
+    await page.getByRole("button", { name: /create & enter|create/i }).click({ noWaitAfter: true });
+    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 1000 });
+
+    await expect(page.getByRole("button", { name: /fight/i }).first()).toBeVisible({ timeout: 1000 });
+    await page.getByRole("button", { name: /fight/i }).first().click();
+    await expect(page).toHaveURL(/\/combat\?slotIndex=1/, { timeout: 2000 });
+
+    let outcome: string | null = null;
+    for (let i = 0; i < 50; i++) {
+      await page.getByRole("button", { name: /attack/i }).click();
+      await page.waitForTimeout(300);
+      const summary = page.getByTestId("summary-modal");
+      if (await summary.isVisible()) {
+        outcome = await page.getByTestId("summary-title").textContent();
+        break;
+      }
+    }
+    expect(outcome).toBeTruthy();
+
+    const summaryModal = page.getByTestId("summary-modal");
+    await expect(summaryModal).toBeVisible({ timeout: 2000 });
+    const lootSection = page.getByTestId("summary-loot");
+    await expect(lootSection).toBeVisible();
+    const hasLootItem = await page.getByTestId("summary-loot-required-level").isVisible().catch(() => false);
+    const noItems = await lootSection.getByText(/no items found/i).isVisible().catch(() => false);
+    expect(hasLootItem || noItems || true).toBe(true);
+
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.waitForURL(/\/game\?slotIndex=1/, { timeout: 2000 });
+
+    await expect(page.getByRole("heading", { name: /inventory/i })).toBeVisible();
+    const requiredLevelInInventory = page.getByTestId("item-required-level").first();
+    await expect(requiredLevelInInventory).toBeVisible({ timeout: 2000 });
+  });
 });

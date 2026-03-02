@@ -1,5 +1,5 @@
 /**
- * Phase 2B: Deterministic item selection for loot drops.
+ * Deterministic item selection for loot drops.
  * Filters catalog by tier (power cap), then picks item type and specific item from same RNG stream.
  */
 
@@ -12,6 +12,8 @@ export interface CatalogItemForLoot {
   attackBonus: number;
   defenseBonus: number;
   healPercent: number;
+  requiredLevel?: number;
+  powerScore?: number;
 }
 
 /** Max power score allowed per tier. WEAK: small items; NORMAL: mid; ELITE: larger. */
@@ -82,7 +84,8 @@ export function selectDropItem(input: SelectDropItemInput): SelectDropItemResult
   const byTier = filterByTier(catalogItems, enemyTier);
   const chosenType = chooseItemType(rng);
   const byType = filterByType(byTier, chosenType);
-  const pool = byType.length > 0 ? byType : byTier;
+  let pool = byType.length > 0 ? byType : byTier;
+  if (pool.length === 0) pool = catalogItems;
   const item = rng.pick(pool);
   return { itemCatalogId: item.id, quantity: 1 };
 }
