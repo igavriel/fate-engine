@@ -16,8 +16,8 @@ export async function registerAndLogin(
   page: import("@playwright/test").Page,
   email: string
 ): Promise<void> {
-  await page.goto("/login");
-  await expect(page.getByTestId("page-login")).toBeVisible();
+  await page.goto("/seal");
+  await expect(page.getByTestId("seal")).toBeVisible();
   await expect(page.getByRole("heading", { name: /enter the seal|login|register/i })).toBeVisible();
   await page.getByRole("button", { name: /bind account/i }).click();
   await page.getByLabel(/email/i).fill(email);
@@ -28,5 +28,5 @@ export async function registerAndLogin(
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(E2E_PASSWORD);
   await page.getByRole("button", { name: /sign in/i }).click();
-  await expect(page).toHaveURL(/\/slots/, { timeout: 1000 });
+  await expect(page).toHaveURL(/\/vessels/, { timeout: 1000 });
 }
