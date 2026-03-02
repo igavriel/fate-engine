@@ -49,9 +49,10 @@ export type BadgeTier = "WEAK" | "NORMAL" | "ELITE";
 export function badgeTier(tier: BadgeTier, extra = ""): string {
   const base = "rounded px-2 py-0.5 text-xs font-medium uppercase";
   const tierClasses: Record<BadgeTier, string> = {
-    WEAK: "bg-zinc-600 text-zinc-300",
+    WEAK: "bg-zinc-800/70 text-zinc-300 border border-zinc-700/70",
     NORMAL: "bg-amber-900/50 text-amber-200 border border-amber-700/50",
-    ELITE: "bg-red-900/50 text-red-200 border border-red-700/50",
+    ELITE:
+      "bg-amber-950/55 text-amber-200 border border-amber-500/60 shadow-[0_0_18px_rgba(245,158,11,0.14)]",
   };
   return [base, tierClasses[tier] ?? tierClasses.NORMAL, extra]
     .filter(Boolean)

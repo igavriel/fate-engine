@@ -62,7 +62,8 @@ describe("classnames", () => {
     });
     it("returns ELITE styling for ELITE", () => {
       const c = badgeTier("ELITE");
-      expect(c).toMatch(/red/);
+      expect(c).toMatch(/amber|yellow/);
+      expect(c).toMatch(/shadow|\[0_0/);
     });
     it("returns string for unknown tier (fallback)", () => {
       const c = badgeTier("NORMAL" as "WEAK" | "NORMAL" | "ELITE");

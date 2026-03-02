@@ -59,7 +59,14 @@ Specs live in `e2e/`. Playwright starts the dev server by default unless `reuseE
 
 ### UI/theme coverage gate
 
-- **Paths:** `src/ui/theme/**` and `src/ui/components/**`.
+- **Paths:** `src/ui/theme/**`, `src/ui/components/**`, and `src/ui/motion/**`.
 - **Requirement:** ≥ 90% line coverage for all non-test files in these directories.
 - **Enforcement:** After `pnpm test`, the script `scripts/check-ui-coverage.mjs` runs automatically. It reads `coverage/coverage-final.json` (v8/Istanbul format) and fails the build if any file under the above paths has line coverage below 90%.
 - **Tests:** Theme unit tests live next to source under `src/ui/theme/*.test.ts` and `src/ui/components/*.test.tsx`. Integration tests for hub copy live in `tests/integration/ui/hub-copy.test.ts`.
+
+#### Phase 3B (visual polish) files in scope
+
+- `src/ui/motion/motion.ts`
+- `src/ui/components/HpBar.tsx`
+- `src/ui/components/OmenCard.tsx`
+- `src/ui/components/AmbientBackground.tsx`

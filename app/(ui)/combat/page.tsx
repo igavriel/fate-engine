@@ -7,6 +7,8 @@ import type { CombatStateResponse } from "@/shared/zod/game";
 import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
 import { labels, screenCopy, actionLabels } from "@/src/ui/theme/copy";
 import { panel, buttonPrimary, buttonGhost } from "@/src/ui/theme/classnames";
+import { fadeIn } from "@/src/ui/motion/motion";
+import { HpBar } from "@/src/ui/components/HpBar";
 
 type ApiError = { error: { code: string; message: string } };
 
@@ -151,6 +153,7 @@ function CombatPageInner() {
           <p className="mt-2 text-zinc-200">
             {labels.HP}: {combat.player.hp} / {combat.player.hpMax}
           </p>
+          <HpBar current={combat.player.hp} max={combat.player.hpMax} variant="player" />
           <p className="mt-1 text-sm text-zinc-500">
             ATK {combat.player.effectiveAttack} · DEF {combat.player.effectiveDefense} · Luck{" "}
             {combat.player.luck}
@@ -164,17 +167,24 @@ function CombatPageInner() {
           <p className="text-sm text-zinc-500">
             Lv.{combat.enemy.level} · {labels.HP}: {combat.enemy.hp} / {combat.enemy.hpMax}
           </p>
+          <HpBar current={combat.enemy.hp} max={combat.enemy.hpMax} variant="enemy" />
         </div>
       </div>
 
       <div className="mt-6">
         <h2 className="text-sm font-medium text-zinc-400">{labels.Log}</h2>
-        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-zinc-300">
+        <div
+          className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-3 font-mono text-sm text-zinc-300"
+          data-testid="chronicle"
+        >
           {logEntries.length === 0 ? (
             <p className="text-zinc-500">—</p>
           ) : (
             logEntries.map((entry, i) => (
-              <p key={i} className="whitespace-pre-wrap">
+              <p
+                key={entry.t}
+                className={`whitespace-pre-wrap ${i === logEntries.length - 1 ? fadeIn() : ""}`}
+              >
                 {entry.text}
               </p>
             ))

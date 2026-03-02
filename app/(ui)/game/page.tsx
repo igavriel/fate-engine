@@ -8,8 +8,8 @@ import type { SummaryResponse } from "@/shared/zod/game";
 import { SummaryModal } from "@/components/SummaryModal";
 import { gameErrorMessage } from "@/src/ui/errors/gameErrors";
 import { labels, screenCopy, actionLabels } from "@/src/ui/theme/copy";
-import { panel, card, buttonPrimary, buttonGhost, badgeTier } from "@/src/ui/theme/classnames";
-import type { BadgeTier } from "@/src/ui/theme/classnames";
+import { panel, buttonPrimary, buttonGhost } from "@/src/ui/theme/classnames";
+import { OmenCard } from "@/src/ui/components/OmenCard";
 
 type GameStatus = { slotIndex: number; run: RunStatus };
 
@@ -362,39 +362,14 @@ function GamePageInner() {
         <h2 className="text-lg font-semibold text-zinc-200">{labels.Enemy}s</h2>
         <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-3">
           {enemies?.map((e, index) => (
-            <div
+            <OmenCard
               key={e.choiceId}
-              data-testid={`omen-card-${index}`}
-              className={card()}
-            >
-              <div className="flex items-center justify-between">
-                <span className={badgeTier((e.tier as BadgeTier) ?? "NORMAL")} data-testid="enemy-tier">
-                  {e.tier}
-                </span>
-                <span className="text-xs text-zinc-500">Lv.{e.level}</span>
-              </div>
-              <p className="mt-2 text-xs font-medium text-amber-500/90 uppercase">{labels.Enemy}</p>
-              <p className="mt-1 font-medium text-zinc-100" data-testid="enemy-name">
-                {e.name}
-              </p>
-              <p className="text-sm text-zinc-500" data-testid="enemy-species">
-                {e.species}
-              </p>
-              <p className="mt-2 text-xs text-zinc-500">
-                Loot: {e.preview.estimatedLootCoinsMin}–{e.preview.estimatedLootCoinsMax} {labels.Coins.toLowerCase()}
-              </p>
-              <div className="mt-3">
-                <button
-                  type="button"
-                  disabled={!!summary || fightPending !== null}
-                  onClick={() => handleStartEncounter(e.choiceId)}
-                  className={`w-full min-h-[44px] ${buttonPrimary()} bg-red-700 hover:bg-red-600`}
-                  data-testid="btn-confront"
-                >
-                  {fightPending === e.choiceId ? "…" : actionLabels.confront}
-                </button>
-              </div>
-            </div>
+              enemy={e}
+              index={index}
+              disabled={!!summary || fightPending !== null}
+              fightPendingChoiceId={fightPending}
+              onConfront={handleStartEncounter}
+            />
           ))}
         </div>
       </div>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Ensures src/ui/theme/** and src/ui/components/** have >= 90% line coverage.
+ * Ensures key UI directories have >= 90% line coverage.
  * Run after: pnpm test (which runs vitest with --coverage).
  * Reads coverage/coverage-final.json (v8/Istanbul format).
  */
@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const coveragePath = path.join(__dirname, "..", "coverage", "coverage-final.json");
 
-const UI_GLOBS = ["src/ui/theme", "src/ui/components"];
+const UI_GLOBS = ["src/ui/theme", "src/ui/components", "src/ui/motion"];
 const MIN_LINE_COVERAGE = 90;
 
 function normalizePath(p) {
@@ -55,7 +55,7 @@ const entries = Object.entries(coverage).filter(
 );
 
 if (entries.length === 0) {
-  console.log("No src/ui/theme or src/ui/components files in coverage (ok if no such files).");
+  console.log("No UI files found in coverage (ok if no such files).");
   process.exit(0);
 }
 
