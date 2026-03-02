@@ -13,6 +13,16 @@ vi.mock("@/server/http/validate", () => ({
 }));
 vi.mock("@/server/game/combatService", () => ({
   ackSummary: (userId: string, slotIndex: number) => mockAckSummary(userId, slotIndex),
+  CombatError: class CombatError extends Error {
+    constructor(
+      public code: string,
+      message: string,
+      public status: 400 | 404 | 409
+    ) {
+      super(message);
+      this.name = "CombatError";
+    }
+  },
 }));
 
 describe("POST /api/game/summary/ack", () => {
@@ -81,6 +91,28 @@ describe("POST /api/game/summary/ack", () => {
     expect(data.status).toBeDefined();
     expect(Array.isArray(data.inventory)).toBe(true);
     expect(mockAckSummary).toHaveBeenCalledWith("user-1", 1);
+  });
+
+  it("returns 404 when CombatError NO_SUMMARY", async () => {
+    mockRequireAuth.mockResolvedValue("user-1");
+    mockParseJson.mockResolvedValue({
+      success: true,
+      data: { slotIndex: 1 },
+    });
+    const { CombatError } = await import("@/server/game/combatService");
+    mockAckSummary.mockRejectedValue(
+      new CombatError("NO_SUMMARY", "No pending combat summary", 404)
+    );
+    const res = await POST(
+      new Request("http://localhost/api/game/summary/ack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: "fe_auth=x" },
+        body: JSON.stringify({ slotIndex: 1 }),
+      })
+    );
+    expect(res.status).toBe(404);
+    const data = (await res.json()) as { error: { code: string } };
+    expect(data.error.code).toBe("NO_SUMMARY");
   });
 
   it("returns 404 when GameError SLOT_NOT_FOUND", async () => {

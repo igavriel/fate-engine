@@ -1,5 +1,5 @@
 import { requireAuth } from "@/server/auth/requireAuth";
-import { ackSummary } from "@/server/game/combatService";
+import { ackSummary, CombatError } from "@/server/game/combatService";
 import { GameError } from "@/server/game/requireRunForSlot";
 import { summaryAckBodySchema } from "@/shared/zod/game";
 import { getTraceId } from "@/server/http/trace";
@@ -28,6 +28,8 @@ async function postSummaryAckHandler(request: Request) {
     log.info({ event: "summary_ack" }, "summary_ack");
     return ok(result, 200, traceId);
   } catch (err) {
+    if (err instanceof CombatError)
+      return errorResponse(err.code, err.message, err.status, traceId);
     if (err instanceof GameError) return errorResponse(err.code, err.message, err.status, traceId);
     throw err;
   }

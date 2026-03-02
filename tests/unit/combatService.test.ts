@@ -187,7 +187,7 @@ describe("combatService", () => {
       await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
       expect(err.code).toBe("SUMMARY_PENDING");
-      expect(err.status).toBe(400);
+      expect(err.status).toBe(409);
     });
 
     it("throws ENCOUNTER_ACTIVE when state has encounter", async () => {
@@ -205,6 +205,7 @@ describe("combatService", () => {
       await expect(startEncounter("user-1", 1, "enemy-42-0-0")).rejects.toThrow(CombatError);
       const err = await startEncounter("user-1", 1, "enemy-42-0-0").catch((e) => e);
       expect(err.code).toBe("ENCOUNTER_ACTIVE");
+      expect(err.status).toBe(409);
     });
 
     it("throws INVALID_CHOICE when choiceId does not match", async () => {
@@ -360,6 +361,13 @@ describe("combatService", () => {
   });
 
   describe("ackSummary", () => {
+    it("throws NO_SUMMARY when state has no summary", async () => {
+      await expect(ackSummary("user-1", 1)).rejects.toThrow(CombatError);
+      const err = await ackSummary("user-1", 1).catch((e) => e);
+      expect(err.code).toBe("NO_SUMMARY");
+      expect(err.status).toBe(404);
+    });
+
     it("clears summary and returns status and inventory", async () => {
       mockRequireRunForSlot.mockResolvedValue({
         character: baseRun.character,
@@ -379,6 +387,7 @@ describe("combatService", () => {
       await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
       const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
       expect(err.code).toBe("NO_ACTIVE_ENCOUNTER");
+      expect(err.status).toBe(404);
     });
 
     it("throws SUMMARY_PENDING when summary exists", async () => {
@@ -410,6 +419,18 @@ describe("combatService", () => {
       await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
       const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
       expect(err.code).toBe("SUMMARY_PENDING");
+      expect(err.status).toBe(409);
+    });
+
+    it("throws RUN_OVER when run.status is OVER", async () => {
+      mockRequireRunForSlot.mockResolvedValue({
+        character: baseRun.character,
+        run: { ...baseRun, status: "OVER" },
+      });
+      await expect(applyAction("user-1", 1, "ATTACK")).rejects.toThrow(CombatError);
+      const err = await applyAction("user-1", 1, "ATTACK").catch((e) => e);
+      expect(err.code).toBe("RUN_OVER");
+      expect(err.status).toBe(409);
     });
 
     it("returns outcome and updates run when ATTACK continues combat", async () => {

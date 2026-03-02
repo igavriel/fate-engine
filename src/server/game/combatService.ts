@@ -25,7 +25,7 @@ export class CombatError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly status: 400 | 404
+    public readonly status: 400 | 404 | 409
   ) {
     super(message);
     this.name = "CombatError";
@@ -41,10 +41,10 @@ export async function startEncounter(
   const state = getRunState(run.stateJson);
 
   if (state.summary) {
-    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 400);
+    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 409);
   }
   if (state.encounter) {
-    throw new CombatError("ENCOUNTER_ACTIVE", "An encounter is already active", 400);
+    throw new CombatError("ENCOUNTER_ACTIVE", "An encounter is already active", 409);
   }
 
   const choices = generateEnemyChoices({
@@ -160,11 +160,14 @@ export async function applyAction(
   const { character, run } = await requireRunForSlot(userId, slotIndex);
   const state = getRunState(run.stateJson);
 
-  if (!state.encounter) {
-    throw new CombatError("NO_ACTIVE_ENCOUNTER", "No active encounter", 404);
+  if (run.status === "OVER") {
+    throw new CombatError("RUN_OVER", "Run has ended", 409);
   }
   if (state.summary) {
-    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 400);
+    throw new CombatError("SUMMARY_PENDING", "Acknowledge the previous combat summary first", 409);
+  }
+  if (!state.encounter) {
+    throw new CombatError("NO_ACTIVE_ENCOUNTER", "No active encounter", 404);
   }
 
   const equipment = await prisma.runEquipment.findUnique({
@@ -539,6 +542,10 @@ export async function ackSummary(
 ): Promise<SummaryAckResponse> {
   const { run } = await requireRunForSlot(userId, slotIndex);
   const state = getRunState(run.stateJson);
+
+  if (!state.summary) {
+    throw new CombatError("NO_SUMMARY", "No pending combat summary", 404);
+  }
 
   const newState: RunStateJson = {
     version: 1,

@@ -151,4 +151,136 @@ describe("combat flow: encounter start, actions, summary, ack", () => {
       }
     }
   });
+
+  it("start encounter then start again => 409 ENCOUNTER_ACTIVE", async () => {
+    if (!hasRealDb) return;
+    const slot = 2;
+    await getSlots(
+      new Request("http://localhost/api/game/slots", { headers: { Cookie: authCookie } })
+    );
+    const createRes = await createCharacter(
+      new Request("http://localhost/api/game/character/create", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, name: "GuardTest", species: "HUMAN" }),
+      })
+    );
+    expect(createRes.status).toBe(200);
+    const enemiesRes = await getEnemies(
+      new Request(`http://localhost/api/game/enemies?slotIndex=${slot}`, {
+        headers: { Cookie: authCookie },
+      })
+    );
+    expect(enemiesRes.status).toBe(200);
+    const enemiesData = (await enemiesRes.json()) as { enemies: { choiceId: string }[] };
+    const choiceId = enemiesData.enemies[0]!.choiceId;
+    const firstStart = await startEncounter(
+      new Request("http://localhost/api/game/encounter/start", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, choiceId }),
+      })
+    );
+    expect(firstStart.status).toBe(200);
+    const secondStart = await startEncounter(
+      new Request("http://localhost/api/game/encounter/start", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, choiceId }),
+      })
+    );
+    expect(secondStart.status).toBe(409);
+    const body = (await secondStart.json()) as { error: { code: string; message: string } };
+    expect(body.error).toBeDefined();
+    expect(body.error.code).toBe("ENCOUNTER_ACTIVE");
+    expect(body.error.message).toBeDefined();
+  });
+
+  it("no active encounter then action => 404 NO_ACTIVE_ENCOUNTER", async () => {
+    if (!hasRealDb) return;
+    const slot = 3;
+    await getSlots(
+      new Request("http://localhost/api/game/slots", { headers: { Cookie: authCookie } })
+    );
+    const createRes = await createCharacter(
+      new Request("http://localhost/api/game/character/create", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({
+          slotIndex: slot,
+          name: "NoEncounterTest",
+          species: "HUMAN",
+        }),
+      })
+    );
+    expect(createRes.status).toBe(200);
+    const actionRes = await postAction(
+      new Request("http://localhost/api/game/action", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, type: "ATTACK" }),
+      })
+    );
+    expect(actionRes.status).toBe(404);
+    const body = (await actionRes.json()) as { error: { code: string; message: string } };
+    expect(body.error).toBeDefined();
+    expect(body.error.code).toBe("NO_ACTIVE_ENCOUNTER");
+    expect(body.error.message).toBeDefined();
+  });
+
+  it("produce outcome then call action => 409 SUMMARY_PENDING", async () => {
+    if (!hasRealDb) return;
+    const slot = 3;
+    const enemiesRes = await getEnemies(
+      new Request(`http://localhost/api/game/enemies?slotIndex=${slot}`, {
+        headers: { Cookie: authCookie },
+      })
+    );
+    expect(enemiesRes.status).toBe(200);
+    const enemiesData = (await enemiesRes.json()) as { enemies: { choiceId: string }[] };
+    const choiceId = enemiesData.enemies[0]!.choiceId;
+    const startRes = await startEncounter(
+      new Request("http://localhost/api/game/encounter/start", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, choiceId }),
+      })
+    );
+    expect(startRes.status).toBe(200);
+    let outcome: string = "CONTINUE";
+    let steps = 0;
+    const maxSteps = 50;
+    while (outcome === "CONTINUE" && steps < maxSteps) {
+      const actionRes = await postAction(
+        new Request("http://localhost/api/game/action", {
+          method: "POST",
+          headers: authHeaders(authCookie),
+          body: JSON.stringify({ slotIndex: slot, type: "ATTACK" }),
+        })
+      );
+      expect(actionRes.status).toBe(200);
+      const actionData = (await actionRes.json()) as { outcome: string };
+      outcome = actionData.outcome;
+      steps++;
+    }
+    expect(["WIN", "RETREAT", "DEFEAT"]).toContain(outcome);
+    const summaryGet = await getSummary(
+      new Request(`http://localhost/api/game/summary?slotIndex=${slot}`, {
+        headers: { Cookie: authCookie },
+      })
+    );
+    expect(summaryGet.status).toBe(200);
+    const actionWhilePending = await postAction(
+      new Request("http://localhost/api/game/action", {
+        method: "POST",
+        headers: authHeaders(authCookie),
+        body: JSON.stringify({ slotIndex: slot, type: "ATTACK" }),
+      })
+    );
+    expect(actionWhilePending.status).toBe(409);
+    const body = (await actionWhilePending.json()) as { error: { code: string; message: string } };
+    expect(body.error).toBeDefined();
+    expect(body.error.code).toBe("SUMMARY_PENDING");
+    expect(body.error.message).toBeDefined();
+  });
 });
